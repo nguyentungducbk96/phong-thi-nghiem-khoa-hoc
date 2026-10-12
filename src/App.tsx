@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import {
   Experiment,
   NotebookEntry,
@@ -17,17 +17,19 @@ import {
 import { Navbar } from './components/layout/Navbar';
 import { HomeView } from './components/home/HomeView';
 import { ExperimentCatalog } from './components/experiment/ExperimentCatalog';
-import { FiveStepExperimentFlow } from './components/experiment/FiveStepExperimentFlow';
-import { ScientistNotebook } from './components/notebook/ScientistNotebook';
-import { QuizChallenge } from './components/quiz/QuizChallenge';
-import { VideoLibrary } from './components/resources/VideoLibrary';
-import { DocumentLibrary } from './components/resources/DocumentLibrary';
-import { TeacherDashboard, PresentLauncher } from './components/teacher/TeacherDashboard';
-import { AdminPanel } from './components/admin/AdminPanel';
-import { StudentTasks } from './components/student/StudentTasks';
-import { ImportLocalModal } from './components/student/ImportLocalModal';
-import { LoginModal } from './components/auth/LoginModal';
-import { ScienceAssistantModal } from './components/assistant/ScienceAssistantModal';
+// Tách gói: các màn nặng (mô phỏng, góc giáo viên, quản trị...) chỉ tải khi mở tới
+const FiveStepExperimentFlow = lazy(() => import('./components/experiment/FiveStepExperimentFlow').then((m) => ({ default: m.FiveStepExperimentFlow })));
+const ScientistNotebook = lazy(() => import('./components/notebook/ScientistNotebook').then((m) => ({ default: m.ScientistNotebook })));
+const QuizChallenge = lazy(() => import('./components/quiz/QuizChallenge').then((m) => ({ default: m.QuizChallenge })));
+const VideoLibrary = lazy(() => import('./components/resources/VideoLibrary').then((m) => ({ default: m.VideoLibrary })));
+const DocumentLibrary = lazy(() => import('./components/resources/DocumentLibrary').then((m) => ({ default: m.DocumentLibrary })));
+const TeacherDashboard = lazy(() => import('./components/teacher/TeacherDashboard').then((m) => ({ default: m.TeacherDashboard })));
+const PresentLauncher = lazy(() => import('./components/teacher/TeacherDashboard').then((m) => ({ default: m.PresentLauncher })));
+const AdminPanel = lazy(() => import('./components/admin/AdminPanel').then((m) => ({ default: m.AdminPanel })));
+const StudentTasks = lazy(() => import('./components/student/StudentTasks').then((m) => ({ default: m.StudentTasks })));
+const ImportLocalModal = lazy(() => import('./components/student/ImportLocalModal').then((m) => ({ default: m.ImportLocalModal })));
+const LoginModal = lazy(() => import('./components/auth/LoginModal').then((m) => ({ default: m.LoginModal })));
+const ScienceAssistantModal = lazy(() => import('./components/assistant/ScienceAssistantModal').then((m) => ({ default: m.ScienceAssistantModal })));
 import { LoadingState, ErrorState } from './components/ui/States';
 import { useToast } from './components/ui/Toast';
 import { useAuth } from './auth/AuthContext';
@@ -88,6 +90,10 @@ export default function App() {
   const [filterTopicId, setFilterTopicId] = useState<string | undefined>(undefined);
   const [quizStartId, setQuizStartId] = useState<string | undefined>(undefined);
   const [isAssistantOpen, setIsAssistantOpen] = useState<boolean>(false);
+  const [assistantLoaded, setAssistantLoaded] = useState<boolean>(false);
+  useEffect(() => {
+    if (isAssistantOpen) setAssistantLoaded(true);
+  }, [isAssistantOpen]);
   const [showLogin, setShowLogin] = useState<boolean>(false);
 
   // ===== Dữ liệu học tập cá nhân: một kho duy nhất (local hoặc Supabase) =====
@@ -386,6 +392,7 @@ export default function App() {
 
       {/* Main Content Router */}
       <main className="flex-1">
+        <Suspense fallback={<LoadingState text="Đang mở..." />}>
         {dataLoading && store.mode === 'remote' && currentTab !== 'teacher' && currentTab !== 'admin' && (
           <LoadingState text="Đang tải kết quả học tập của em..." />
         )}
@@ -600,8 +607,10 @@ export default function App() {
         {/* QUẢN TRỊ */}
         {currentTab === 'admin' &&
           (role === 'admin' ? <AdminPanel /> : loginPrompt('Khu vực quản trị', 'Chỉ quản trị viên mới vào được khu vực này.'))}
+        </Suspense>
       </main>
 
+      <Suspense fallback={null}>
       {showLogin && (
         <LoginModal onClose={() => setShowLogin(false)} onSuccess={(msg) => toast.success(msg)} />
       )}
@@ -623,12 +632,15 @@ export default function App() {
         />
       )}
 
-      {/* Socratic Learning Assistant "Bạn Khoa Học" Modal */}
-      <ScienceAssistantModal
-        isOpen={isAssistantOpen}
-        onClose={() => setIsAssistantOpen(false)}
-        onSelectExperimentById={handleSelectExperimentById}
-      />
+      {/* Trợ lý "Bạn Khoa Học": tải ở lần mở đầu tiên, sau đó giữ lại để không mất cuộc trò chuyện */}
+      {assistantLoaded && (
+        <ScienceAssistantModal
+          isOpen={isAssistantOpen}
+          onClose={() => setIsAssistantOpen(false)}
+          onSelectExperimentById={handleSelectExperimentById}
+        />
+      )}
+      </Suspense>
 
       {/* Chân trang */}
       <footer className="bg-white border-t border-slate-200 mt-12 sm:mt-16 py-8 px-4 sm:px-6">

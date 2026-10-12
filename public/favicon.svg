@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Phòng Thí Nghiệm Khoa Học Thông Minh">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="64" x2="64" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0891b2"/>
+      <stop offset="0.55" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#4f46e5"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#bg)"/>
+  <!-- Nguyên tử -->
+  <g fill="none" stroke="#a5f3fc" stroke-opacity="0.55" stroke-width="2">
+    <ellipse cx="32" cy="35" rx="24" ry="9"/>
+    <ellipse cx="32" cy="35" rx="24" ry="9" transform="rotate(60 32 35)"/>
+    <ellipse cx="32" cy="35" rx="24" ry="9" transform="rotate(-60 32 35)"/>
+  </g>
+  <!-- Bình thí nghiệm -->
+  <path d="M26 14h12M28 14v12L18 46a4 4 0 0 0 3.6 6h20.8a4 4 0 0 0 3.6-6L36 26V14" fill="#ffffff" fill-opacity="0.15" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M22.5 41h19l3.5 6.5a2 2 0 0 1-1.8 2.8H20.8a2 2 0 0 1-1.8-2.8z" fill="#5eead4"/>
+  <circle cx="32" cy="35" r="2.6" fill="#ffffff"/>
+  <!-- Ngôi sao -->
+  <path d="M51 5l2.4 5.2L59 11l-4.1 3.8 1 5.6L51 17.7l-4.9 2.7 1-5.6L43 11l5.6-.8z" fill="#fcd34d" stroke="#f59e0b" stroke-width="1" stroke-linejoin="round"/>
+</svg>

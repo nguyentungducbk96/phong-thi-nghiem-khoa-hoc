@@ -10,11 +10,22 @@
    Để trống → ứng dụng chạy chế độ ngoại tuyến (localStorage), không lỗi.
 3. `npm run dev`
 
-## Triển khai (Vercel)
+## Đưa lên Vercel
 
-- Đặt 2 biến môi trường `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` trong Project Settings → Environment Variables, rồi build lại.
-- Ứng dụng là một trang (không có định tuyến URL), ảnh dùng đường dẫn tương đối `./images/...`, nên chạy được với base `/` (Vercel) lẫn `--base=./` (GitHub Pages).
-- Sau khi có địa chỉ Vercel: cập nhật **Site URL** trong Supabase → Authentication → URL Configuration (TODO).
+1. Đưa mã nguồn lên GitHub, vào [vercel.com](https://vercel.com) → **Add New… → Project** → chọn kho GitHub này → **Import**.
+   Vercel tự đọc `vercel.json` (Vite, lệnh `npm run build`, thư mục `dist`), không cần chỉnh gì thêm.
+2. Trước khi bấm Deploy, mở **Environment Variables** và thêm 2 biến (lấy ở Supabase → Project Settings → API):
+   - `VITE_SUPABASE_URL` — địa chỉ dự án, dạng `https://xxxx.supabase.co`
+   - `VITE_SUPABASE_ANON_KEY` — khóa **anon (public)**. Tuyệt đối không dùng khóa `service_role`.
+3. Bấm **Deploy**. Xong sẽ có địa chỉ dạng `https://ten-du-an.vercel.app`. (Đổi biến môi trường thì phải **Redeploy** mới có hiệu lực.)
+4. Vào Supabase → **Authentication → URL Configuration**:
+   - **Site URL**: địa chỉ Vercel ở trên, ví dụ `https://ten-du-an.vercel.app`
+   - **Redirect URLs**: thêm `https://ten-du-an.vercel.app/**` (và tên miền riêng nếu có).
+
+Ghi chú: ứng dụng là một trang, chuyển màn hình bằng trạng thái (không có đường dẫn con như `/thi-nghiem`),
+nên không cần luật rewrite. Ảnh nằm ở `public/images/` và được gọi bằng đường dẫn tương đối `./images/...`,
+chạy đúng khi phục vụ ở gốc tên miền (Vercel, `base: '/'`) lẫn khi build `--base=./` (GitHub Pages).
+Các màn nặng (mô phỏng, góc giáo viên, quản trị...) được tách gói và chỉ tải khi mở tới.
 
 ## Máy chủ (Supabase)
 

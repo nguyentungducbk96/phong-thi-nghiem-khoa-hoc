@@ -5,10 +5,26 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    // Chạy ở gốc tên miền (Vercel). GitHub Pages dùng: vite build --base=./
+    base: '/',
     plugins: [react(), tailwindcss()],
+    build: {
+      rolldownOptions: {
+        output: {
+          // Tách thư viện ra gói riêng: gói chính nhỏ, trình duyệt lưu đệm thư viện lâu dài
+          codeSplitting: {
+            groups: [
+              { name: 'react-vendor', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, priority: 20 },
+              { name: 'supabase', test: /node_modules[\\/]@supabase[\\/]/, priority: 20 },
+              { name: 'icons', test: /node_modules[\\/]lucide-react[\\/]/, priority: 10 }
+            ]
+          }
+        }
+      }
+    },
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(import.meta.dirname, '.'),
       },
     },
     server: {
