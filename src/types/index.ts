@@ -27,8 +27,6 @@ export interface ScienceTopic {
   iconName: string;
   color: string;
   description: string;
-  experimentCount: number;
-  curriculumStandard: string;
 }
 
 export interface Experiment {
@@ -111,14 +109,12 @@ export interface Classroom {
   grade: string;
   teacherName: string;
   studentCount: number;
+  // Danh sách học sinh do giáo viên nhập. Tiến độ học tập của từng em chỉ có
+  // khi kết nối máy chủ (giai đoạn sau), nên ở đây chỉ lưu tên.
   students: {
     id: string;
     name: string;
     avatar: string;
-    points: number;
-    completedExperiments: number;
-    lastActive: string;
-    averageScore: number;
   }[];
 }
 
@@ -137,17 +133,19 @@ export interface Assignment {
   totalStudents: number;
 }
 
+export type ResourceFileType = 'pdf' | 'docx' | 'pptx' | 'image' | 'link';
+
 export interface LearningResource {
   id: string;
   title: string;
   description: string;
   topicId: TopicId;
-  fileType: 'pdf' | 'docx' | 'pptx' | 'image';
+  fileType: ResourceFileType;
   audience: 'public' | 'teacher_only';
-  size: string;
-  uploadedBy: string;
+  // Đường dẫn tới tài liệu (giáo viên dán link). Chưa có máy chủ lưu tệp.
+  url: string;
   uploadedAt: string;
-  downloadUrl?: string;
+  updatedAt?: string;
 }
 
 export interface ScienceVideo {
@@ -156,11 +154,34 @@ export interface ScienceVideo {
   thumbnailUrl: string;
   topicId: TopicId;
   description: string;
-  duration: string;
+  // Để trống nếu giáo viên không nhập thời lượng
+  duration?: string;
   level: string;
   preQuestion: string;
   postQuestion: string;
   videoUrl: string;
   isFavorite?: boolean;
-  viewCount: number;
+}
+
+export interface QuizAttempt {
+  id: string;
+  quizId: string;
+  quizTitle: string;
+  date: string; // ISO
+  correct: number;
+  total: number;
+  xpAwarded: number;
+  wrongQuestionIds: string[];
+}
+
+export interface ExperimentResult {
+  id: string;
+  experimentId: string;
+  experimentTitle: string;
+  date: string; // ISO
+  predictionId: string | null;
+  predictionCorrect: boolean;
+  correct: number;
+  total: number;
+  wrongQuestionIds: string[];
 }

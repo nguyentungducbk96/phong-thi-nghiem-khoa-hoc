@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RotateCcw, Lightbulb, Sun, Shield } from 'lucide-react';
+import { RotateCcw, Lightbulb } from 'lucide-react';
 
 interface Props {
   onExperimentAction?: (actionName: string, detail: string) => void;
@@ -8,40 +8,56 @@ interface Props {
 export const LightPropagationSimulation: React.FC<Props> = ({ onExperimentAction }) => {
   // Light On/Off
   const [isLightOn, setIsLightOn] = useState<boolean>(true);
-  // Distance from light source to obstacle (cm: 10 to 60)
-  const [obstacleDistance, setObstacleDistance] = useState<number>(25);
-  // Distance from light to screen (cm: 70 to 100)
-  const [screenDistance, setScreenDistance] = useState<number>(85);
+  // Vị trí trên thanh trượt quang học (cm, từ 0 đến 100)
+  const [lightPos, setLightPos] = useState<number>(5);
+  const [obstaclePos, setObstaclePos] = useState<number>(30);
+  const [screenPos, setScreenPos] = useState<number>(90);
   // Obstacle material: 'opaque' (Bìa chắn sáng), 'transparent' (Kính trong), 'translucent' (Kính mờ)
   const [obstacleType, setObstacleType] = useState<'opaque' | 'transparent' | 'translucent'>('opaque');
-  // Obstacle size (cm)
-  const [obstacleRadius, setObstacleRadius] = useState<number>(24);
+  const obstacleRadius = 24;
+  const MIN_GAP = 8;
+
+  const log = (action: string, detail: string) => onExperimentAction?.(action, detail);
 
   const handleReset = () => {
     setIsLightOn(true);
-    setObstacleDistance(25);
-    setScreenDistance(85);
+    setLightPos(5);
+    setObstaclePos(30);
+    setScreenPos(90);
     setObstacleType('opaque');
-    setObstacleRadius(24);
-    if (onExperimentAction) {
-      onExperimentAction('Đặt lại thí nghiệm', 'Trở về vị trí ban đầu');
-    }
+    log('Đặt lại thí nghiệm', 'Trở về vị trí ban đầu');
   };
 
-  // Geometric shadow calculation:
-  // Light source at x=50, y=180
-  // Obstacle at x = 50 + obstacleDistance * 3.5
-  // Screen at x = 50 + screenDistance * 3.8
-  // Shadow radius on screen = obstacleRadius * (screenDistance / obstacleDistance)
-  const shadowRadius =
-    obstacleType === 'transparent'
-      ? 0
-      : obstacleType === 'translucent'
-      ? Math.min(130, obstacleRadius * (screenDistance / obstacleDistance) * 0.8)
-      : Math.min(150, obstacleRadius * (screenDistance / obstacleDistance));
+  // Giữ thứ tự: đèn < vật cản < màn
+  const moveLight = (v: number) => {
+    const val = Math.min(v, obstaclePos - MIN_GAP);
+    setLightPos(val);
+    log('Di chuyển nguồn sáng', `${val} cm`);
+  };
+  const moveObstacle = (v: number) => {
+    const val = Math.max(lightPos + MIN_GAP, Math.min(v, screenPos - MIN_GAP));
+    setObstaclePos(val);
+    log('Di chuyển vật cản', `${val} cm`);
+  };
+  const moveScreen = (v: number) => {
+    const val = Math.max(v, obstaclePos + MIN_GAP);
+    setScreenPos(val);
+    log('Di chuyển màn hứng', `${val} cm`);
+  };
 
-  const obstacleX = 50 + obstacleDistance * 3.6;
-  const screenX = 50 + screenDistance * 3.8;
+  // Hình học đơn giản (đèn coi như một điểm): bóng to gấp
+  // (khoảng cách đèn → màn) / (khoảng cách đèn → vật) lần vật cản.
+  const ratio = (screenPos - lightPos) / (obstaclePos - lightPos);
+  const rawShadow = obstacleRadius * ratio;
+  const SCREEN_HALF = 130;
+  const shadowRadius = obstacleType === 'transparent' ? 0 : Math.min(SCREEN_HALF, rawShadow);
+  const shadowTooBig = obstacleType !== 'transparent' && rawShadow > SCREEN_HALF;
+
+  const toX = (cm: number) => 30 + cm * 4.4;
+  const lightX = toX(lightPos);
+  const obstacleX = toX(obstaclePos);
+  const screenX = toX(screenPos);
+  const beamHalf = Math.min(SCREEN_HALF, (screenX - lightX) * 0.45);
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
@@ -52,7 +68,7 @@ export const LightPropagationSimulation: React.FC<Props> = ({ onExperimentAction
             Mô phỏng: Sự truyền thẳng của ánh sáng & Tạo thành bóng tối
           </h3>
           <p className="text-xs text-slate-500 mt-0.5">
-            Bật đèn pin, di chuyển vật cản lại gần/xa nguồn sáng và quan sát bóng in trên màn
+            Bật đèn, di chuyển đèn, vật cản và màn hứng rồi quan sát bóng trên màn
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -97,7 +113,9 @@ export const LightPropagationSimulation: React.FC<Props> = ({ onExperimentAction
               </strong>
             </span>
             <span className="bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 font-mono">
-              Kích thước bóng: <strong className="text-amber-400">{Math.round(shadowRadius * 2)}px</strong>
+              Bóng to gấp: <strong className="text-amber-400">
+                {obstacleType === 'transparent' || !isLightOn ? '—' : `${ratio.toFixed(1)} lần vật`}
+              </strong>
             </span>
           </div>
 
@@ -106,30 +124,28 @@ export const LightPropagationSimulation: React.FC<Props> = ({ onExperimentAction
             <rect x="20" y="300" width="460" height="12" rx="3" fill="#334155" />
             <line x1="20" y1="306" x2="480" y2="306" stroke="#475569" strokeWidth="2" strokeDasharray="5,5" />
 
-            {/* Flashlight (Đèn pin) at x=50, y=170 */}
-            <g transform="translate(45, 170)">
-              {/* Flashlight body */}
-              <rect x="-35" y="-12" width="40" height="24" rx="4" fill="#64748b" stroke="#94a3b8" />
-              <path d="M 5 -18 L 22 -24 L 22 24 L 5 18 Z" fill="#475569" stroke="#94a3b8" />
-              <ellipse cx="22" cy="0" rx="3" ry="24" fill={isLightOn ? '#fef08a' : '#334155'} />
+            {/* Light beam cone & straight rays (vẽ theo tọa độ tuyệt đối) */}
+            {isLightOn && (
+              <polygon
+                points={`${lightX},170 ${screenX},${170 - beamHalf} ${screenX},${170 + beamHalf}`}
+                fill="rgba(254, 240, 138, 0.22)"
+              />
+            )}
+            {isLightOn && obstacleType !== 'transparent' && (
+              <g stroke="#fef08a" strokeWidth="1.2" strokeDasharray="3,3" opacity="0.7">
+                <line x1={lightX} y1="170" x2={screenX} y2={170 - shadowRadius} />
+                <line x1={lightX} y1="170" x2={screenX} y2={170 + shadowRadius} />
+              </g>
+            )}
 
-              {/* Light rays cone when turned ON */}
-              {isLightOn && (
-                <polygon
-                  points={`22,-24 ${screenX - 45},-120 ${screenX - 45},120 22,24`}
-                  fill="rgba(254, 240, 138, 0.22)"
-                />
-              )}
-
-              {/* Light beam guidelines (Đường truyền thẳng) */}
-              {isLightOn && (
-                <g stroke="#fef08a" strokeWidth="1.2" strokeDasharray="3,3" opacity="0.65">
-                  <line x1="22" y1="-22" x2={obstacleX - 45} y2={-obstacleRadius} />
-                  <line x1={obstacleX - 45} y1={-obstacleRadius} x2={screenX - 45} y2={-shadowRadius} />
-                  <line x1="22" y1="22" x2={obstacleX - 45} y2={obstacleRadius} />
-                  <line x1={obstacleX - 45} y1={obstacleRadius} x2={screenX - 45} y2={shadowRadius} />
-                </g>
-              )}
+            {/* Flashlight (nguồn sáng) */}
+            <g transform={`translate(${lightX}, 170)`} className="transition-all duration-150">
+              <rect x="-40" y="-12" width="40" height="24" rx="4" fill="#64748b" stroke="#94a3b8" />
+              <path d="M -2 -18 L 4 -22 L 4 22 L -2 18 Z" fill="#475569" stroke="#94a3b8" />
+              <circle cx="0" cy="0" r="5" fill={isLightOn ? '#fef08a' : '#334155'} />
+              <rect x="-3" y="25" width="6" height="105" fill="#64748b" />
+              <rect x="-16" y="125" width="32" height="6" rx="2" fill="#475569" />
+              <text x="-20" y="-20" fontSize="8" fill="#94a3b8" textAnchor="middle">ĐÈN</text>
             </g>
 
             {/* Obstacle (Vật cản) */}
@@ -163,6 +179,9 @@ export const LightPropagationSimulation: React.FC<Props> = ({ onExperimentAction
             <g transform={`translate(${screenX}, 170)`} className="transition-all duration-150">
               {/* Screen frame */}
               <rect x="-4" y="-130" width="8" height="260" rx="3" fill="#cbd5e1" stroke="#94a3b8" />
+              {isLightOn && (
+                <rect x="-3" y={-beamHalf} width="6" height={beamHalf * 2} fill="#fef9c3" rx="2" />
+              )}
               <rect x="-18" y="125" width="36" height="6" rx="2" fill="#475569" />
 
               {/* Shadow cast on the screen */}
@@ -193,10 +212,16 @@ export const LightPropagationSimulation: React.FC<Props> = ({ onExperimentAction
 
           {/* Bottom Observation Note */}
           <div className="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 flex items-center justify-between text-xs text-slate-400">
-            <span>
-              {obstacleDistance < 20
-                ? '⭐ Vật cản rất gần đèn pin: Chùm sáng bị che rộng hơn, bóng trên màn phóng to cực đại!'
-                : '⭐ Vật cản lùi xa đèn pin: Chùm sáng bị che hẹp hơn, bóng trên màn thu nhỏ lại.'}
+            <span aria-live="polite">
+              {!isLightOn
+                ? '🌑 Đèn tắt: không có ánh sáng nên cũng không thấy bóng.'
+                : obstacleType === 'transparent'
+                ? '⭐ Kính trong cho ánh sáng đi qua nên gần như không có bóng.'
+                : shadowTooBig
+                ? '⭐ Vật rất gần đèn: bóng to hơn cả màn hứng!'
+                : ratio >= 2.5
+                ? '⭐ Vật ở gần đèn (hoặc màn ở xa): bóng to.'
+                : '⭐ Vật ở xa đèn (hoặc gần màn): bóng nhỏ, gần bằng vật.'}
             </span>
           </div>
         </div>
@@ -206,10 +231,7 @@ export const LightPropagationSimulation: React.FC<Props> = ({ onExperimentAction
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
-                Thông số vị trí và vật liệu
-              </span>
-              <span className="text-xs text-sky-600 font-semibold font-mono">
-                d = {obstacleDistance} cm
+                Vị trí và vật liệu
               </span>
             </div>
 
@@ -261,44 +283,31 @@ export const LightPropagationSimulation: React.FC<Props> = ({ onExperimentAction
               </div>
             </div>
 
-            {/* Obstacle Distance Slider */}
-            <div className="mt-5">
-              <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1.5">
-                <span>2. Khoảng cách: Đèn pin → Vật cản</span>
-                <span className="font-mono text-cyan-600 font-bold">{obstacleDistance} cm</span>
+            {/* Position sliders */}
+            {[
+              { id: 'light-pos', label: '2. Vị trí nguồn sáng (đèn)', value: lightPos, min: 0, max: 40, onChange: moveLight },
+              { id: 'obstacle-pos', label: '3. Vị trí vật cản', value: obstaclePos, min: 8, max: 92, onChange: moveObstacle },
+              { id: 'screen-pos', label: '4. Vị trí màn hứng', value: screenPos, min: 50, max: 100, onChange: moveScreen }
+            ].map((ctl) => (
+              <div className="mt-4" key={ctl.id}>
+                <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1.5">
+                  <label htmlFor={ctl.id}>{ctl.label}</label>
+                  <span className="font-mono text-cyan-600 font-bold">{ctl.value} cm</span>
+                </div>
+                <input
+                  id={ctl.id}
+                  type="range"
+                  min={ctl.min}
+                  max={ctl.max}
+                  value={ctl.value}
+                  onChange={(e) => ctl.onChange(Number(e.target.value))}
+                  className="w-full accent-cyan-600 h-2 bg-slate-200 rounded-lg cursor-pointer"
+                />
               </div>
-              <input
-                type="range"
-                min="12"
-                max="55"
-                value={obstacleDistance}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  setObstacleDistance(val);
-                  if (onExperimentAction) onExperimentAction('Dịch chuyển vật cản', `${val} cm`);
-                }}
-                className="w-full accent-cyan-600 h-2 bg-slate-200 rounded-lg cursor-pointer"
-              />
-              <div className="flex justify-between text-[11px] text-slate-400 mt-1">
-                <span>Gần đèn (Bóng to)</span>
-                <span>Xa đèn (Bóng nhỏ)</span>
-              </div>
-            </div>
-
-            {/* Quick buttons */}
-            <div className="grid grid-cols-2 gap-2 mt-4">
-              <button
-                onClick={() => setObstacleDistance(15)}
-                className="py-1.5 px-2.5 text-xs font-medium rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-sky-50 transition-colors shadow-2xs"
-              >
-                Đưa lại gần đèn (15cm)
-              </button>
-              <button
-                onClick={() => setObstacleDistance(50)}
-                className="py-1.5 px-2.5 text-xs font-medium rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-sky-50 transition-colors shadow-2xs"
-              >
-                Đưa ra xa đèn (50cm)
-              </button>
+            ))}
+            <div className="mt-3 p-2.5 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-600 space-y-0.5">
+              <p>Khoảng cách đèn → vật cản: <strong>{obstaclePos - lightPos} cm</strong></p>
+              <p>Khoảng cách đèn → màn: <strong>{screenPos - lightPos} cm</strong></p>
             </div>
           </div>
 

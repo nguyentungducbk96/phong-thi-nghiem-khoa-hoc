@@ -1,5 +1,8 @@
 import React from 'react';
 import { Experiment, ScienceTopic } from '../../types';
+import { countExperimentsByTopic } from '../../data/scienceData';
+import { Badge, computeRank } from '../../utils/progress';
+import { clickable } from '../../utils/a11y';
 import {
   Compass,
   FlaskConical,
@@ -23,6 +26,8 @@ interface Props {
   topics: ScienceTopic[];
   completedExpIds: string[];
   studentPoints: number;
+  notebookCount: number;
+  badges: Badge[];
   onSelectExperiment: (exp: Experiment) => void;
   onSelectTopic: (topicId: string) => void;
   onExploreAll: () => void;
@@ -33,6 +38,8 @@ export const HomeView: React.FC<Props> = ({
   topics,
   completedExpIds,
   studentPoints,
+  notebookCount,
+  badges,
   onSelectExperiment,
   onSelectTopic,
   onExploreAll
@@ -61,7 +68,11 @@ export const HomeView: React.FC<Props> = ({
     }
   };
 
-  const featuredExperiments = experiments.slice(0, 3);
+  // Đề xuất theo tiến độ: thí nghiệm chưa làm lên trước
+  const unfinished = experiments.filter((e) => !completedExpIds.includes(e.id));
+  const finished = experiments.filter((e) => completedExpIds.includes(e.id));
+  const featuredExperiments = [...unfinished, ...finished].slice(0, 3);
+  const nextExperiment = unfinished[0] || experiments[0];
 
   return (
     <div className="space-y-12 pb-16">
@@ -70,7 +81,7 @@ export const HomeView: React.FC<Props> = ({
         <div className="relative z-10 max-w-2xl space-y-5">
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-3.5 py-1.5 rounded-full text-xs font-semibold text-cyan-200">
             <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>Chương trình Giáo dục Phổ thông Khoa học Lớp 4</span>
+            <span>Khoa học lớp 4</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
@@ -82,12 +93,12 @@ export const HomeView: React.FC<Props> = ({
 
           <p className="text-sm sm:text-base text-sky-100/90 leading-relaxed max-w-xl">
             Khẩu hiệu: <strong>“Khơi nguồn tò mò – Khám phá khoa học – Sáng tạo tương lai”</strong>. 
-            Thực hiện thí nghiệm ảo tương tác 100%, tự mình kiểm chứng giả thuyết và ghi lại kết quả vào sổ tay cá nhân.
+            Làm thí nghiệm mô phỏng trên máy, tự kiểm tra dự đoán của mình và ghi lại kết quả vào sổ tay cá nhân.
           </p>
 
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <button
-              onClick={() => onSelectExperiment(experiments[0])}
+              onClick={() => onSelectExperiment(nextExperiment)}
               className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-slate-950 font-bold text-sm shadow-lg shadow-orange-500/25 transition-all transform hover:-translate-y-0.5"
             >
               <FlaskConical className="w-4 h-4" />
@@ -125,14 +136,23 @@ export const HomeView: React.FC<Props> = ({
                 Tiến độ khám phá của em
               </h2>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-semibold text-slate-500">Huy hiệu đạt được:</span>
-              <span className="text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-full flex items-center gap-1">
-                ⭐ Thám Tử Không Khí
-              </span>
-              <span className="text-xs font-bold bg-indigo-50 text-indigo-800 border border-indigo-200 px-2.5 py-1 rounded-full flex items-center gap-1">
-                🧲 Bậc Thầy Từ Tính
-              </span>
+              {badges.length === 0 ? (
+                <span className="text-xs text-slate-400 italic">
+                  Chưa có huy hiệu nào. Hoàn thành thí nghiệm đầu tiên để nhận huy hiệu nhé!
+                </span>
+              ) : (
+                badges.map((b) => (
+                  <span
+                    key={b.id}
+                    title={b.description}
+                    className="text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-full flex items-center gap-1"
+                  >
+                    {b.icon} {b.name}
+                  </span>
+                ))
+              )}
             </div>
           </div>
 
@@ -146,19 +166,19 @@ export const HomeView: React.FC<Props> = ({
             <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-100">
               <span className="text-xs font-medium text-slate-500 block">Điểm kinh nghiệm</span>
               <span className="text-2xl sm:text-3xl font-black text-amber-600 font-mono mt-1 block">
-                +{studentPoints} XP
+                {studentPoints} XP
               </span>
             </div>
             <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-100">
               <span className="text-xs font-medium text-slate-500 block">Bài ghi chép sổ tay</span>
               <span className="text-2xl sm:text-3xl font-black text-emerald-800 font-mono mt-1 block">
-                2 bản
+                {notebookCount} bài
               </span>
             </div>
             <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100">
               <span className="text-xs font-medium text-slate-500 block">Cấp bậc nhà nghiên cứu</span>
               <span className="text-base sm:text-lg font-black text-indigo-800 mt-1 block">
-                Nhà Sáng Chế Tập Sự
+                {computeRank(studentPoints)}
               </span>
             </div>
           </div>
@@ -191,8 +211,8 @@ export const HomeView: React.FC<Props> = ({
             return (
               <div
                 key={exp.id}
-                onClick={() => onSelectExperiment(exp)}
-                className="bg-white border border-slate-200 rounded-3xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col justify-between group cursor-pointer"
+                {...clickable(() => onSelectExperiment(exp), `Mở thí nghiệm: ${exp.title}`)}
+                className="bg-white border border-slate-200 rounded-3xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col justify-between group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
               >
                 <div>
                   {/* Thumbnail */}
@@ -236,7 +256,7 @@ export const HomeView: React.FC<Props> = ({
                 <div className="p-5 pt-0">
                   <div className="w-full py-2.5 px-4 rounded-xl bg-slate-50 group-hover:bg-cyan-600 group-hover:text-white text-slate-700 text-xs font-bold transition-colors flex items-center justify-center gap-1.5">
                     <FlaskConical className="w-4 h-4" />
-                    Vào thực nghiệm ngay
+                    {isCompleted ? 'Làm lại để ôn tập' : 'Vào thực nghiệm ngay'}
                   </div>
                 </div>
               </div>
@@ -249,18 +269,20 @@ export const HomeView: React.FC<Props> = ({
       <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6">
         <div>
           <span className="text-xs font-bold text-cyan-700 uppercase tracking-wider">
-            Chương trình Khoa học Lớp 4
+            Khoa học lớp 4
           </span>
           <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mt-0.5">
-            8 Chủ đề kiến thức tự nhiên
+            Chủ đề khoa học
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Được cấu hình theo nội dung chương trình GDPT 2018 môn Khoa học lớp 4
+            Thầy cô có thể điều chỉnh chủ đề cho khớp với sách nhà trường đang dùng
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {topics.map((t) => (
+          {topics.map((t) => {
+            const count = countExperimentsByTopic(t.id);
+            return (
             <button
               key={t.id}
               onClick={() => onSelectTopic(t.id)}
@@ -274,20 +296,18 @@ export const HomeView: React.FC<Props> = ({
                 <h3 className="text-sm font-bold text-slate-900 group-hover:text-cyan-700 transition-colors">
                   {t.name}
                 </h3>
-                <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                  {t.curriculumStandard}
-                </p>
                 <p className="text-xs text-slate-500 mt-1.5 line-clamp-2 leading-relaxed">
                   {t.description}
                 </p>
               </div>
 
               <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-semibold text-slate-400 group-hover:text-cyan-700">
-                <span>{t.experimentCount} bài thí nghiệm</span>
+                <span>{count > 0 ? `${count} thí nghiệm` : 'Sắp có'}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </div>
             </button>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -299,7 +319,7 @@ export const HomeView: React.FC<Props> = ({
               <Award className="w-4 h-4" /> Nguyên tắc nhà khoa học nhí
             </span>
             <h3 className="text-base sm:text-lg font-bold text-slate-900">
-              Quy trình học tập 5 bước chuẩn mực
+              Quy trình học tập 5 bước
             </h3>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
               1. Khám phá ➔ 2. Đưa ra dự đoán ➔ 3. Trực tiếp thực nghiệm ➔ 4. Quan sát & Giải thích ➔ 5. Rút ra kết luận & Vận dụng đời sống. 
@@ -308,7 +328,7 @@ export const HomeView: React.FC<Props> = ({
           </div>
 
           <button
-            onClick={() => onSelectExperiment(experiments[0])}
+            onClick={() => onSelectExperiment(nextExperiment)}
             className="px-5 py-2.5 rounded-xl bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-xs shadow-xs transition-colors shrink-0"
           >
             Trải nghiệm ngay

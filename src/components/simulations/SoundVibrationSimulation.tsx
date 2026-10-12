@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { soundManager } from '../../utils/audio';
 import { RotateCcw, Volume2, VolumeX, Hand, Music } from 'lucide-react';
 
@@ -30,16 +30,32 @@ export const SoundVibrationSimulation: React.FC<Props> = ({ onExperimentAction }
     }
   }, [vibration, isDamped, mode]);
 
+  // Bàn tay chỉ áp lên trống một lúc rồi tự nhấc ra, để có thể gõ tiếp
+  const releaseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (releaseTimer.current) clearTimeout(releaseTimer.current);
+  }, []);
+
+  const releaseHand = () => {
+    if (releaseTimer.current) clearTimeout(releaseTimer.current);
+    releaseTimer.current = null;
+    setIsDamped(false);
+  };
+
   // Strike drum
   const handleStrikeDrum = () => {
-    if (isDamped) return;
+    // Gõ trống thì nhấc tay ra trước (không để trống bị "kẹt")
+    if (isDamped) releaseHand();
     const forceFactor = strikeForce === 1 ? 0.35 : strikeForce === 2 ? 0.7 : 1.0;
     setVibration(forceFactor * 100);
     soundManager.playDrum(forceFactor);
 
     if (onExperimentAction) {
       const labels = ['', 'Gõ nhẹ', 'Gõ vừa', 'Gõ mạnh'];
-      onExperimentAction(labels[strikeForce], `Hạt gạo nảy cao ${(forceFactor * 10).toFixed(0)}cm, phát ra âm thanh ${forceFactor > 0.7 ? 'rất to' : 'nhỏ'}`);
+      onExperimentAction(
+        labels[strikeForce],
+        `Hạt gạo nảy ${strikeForce === 1 ? 'thấp' : strikeForce === 2 ? 'vừa' : 'cao'}, âm thanh ${strikeForce === 1 ? 'nhỏ' : strikeForce === 2 ? 'vừa' : 'to'}`
+      );
     }
   };
 
@@ -50,22 +66,31 @@ export const SoundVibrationSimulation: React.FC<Props> = ({ onExperimentAction }
     soundManager.playStringPluck(note.freq);
 
     if (onExperimentAction) {
-      onExperimentAction(`Gảy nốt ${note.name}`, `Dây đàn dao động ở tần số ${note.freq.toFixed(1)}Hz`);
+      onExperimentAction(`Gảy nốt ${note.name}`, 'Dây đàn rung qua lại và phát ra âm thanh');
     }
   };
 
   // Damp drum with hand
   const handleDampDrum = () => {
+    const wasVibrating = vibration > 5;
     setIsDamped(true);
     setVibration(0);
+    if (releaseTimer.current) clearTimeout(releaseTimer.current);
+    releaseTimer.current = setTimeout(() => {
+      setIsDamped(false);
+      releaseTimer.current = null;
+    }, 1500);
     if (onExperimentAction) {
-      onExperimentAction('Áp tay vào mặt trống', 'Triệt tiêu dao động, âm thanh lập tức tắt hẳn');
+      onExperimentAction(
+        'Áp tay vào mặt trống',
+        wasVibrating ? 'Mặt trống ngừng rung, âm thanh tắt' : 'Mặt trống đang đứng yên nên không có tiếng'
+      );
     }
   };
 
   const handleReset = () => {
     setVibration(0);
-    setIsDamped(false);
+    releaseHand();
     if (onExperimentAction) {
       onExperimentAction('Đặt lại thí nghiệm', 'Dừng mọi dao động');
     }
@@ -77,10 +102,10 @@ export const SoundVibrationSimulation: React.FC<Props> = ({ onExperimentAction }
       <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4 bg-slate-50/70">
         <div>
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            Mô phỏng: Âm thanh được tạo ra như thế nào? (Dao động cơ học)
+            Mô phỏng: Âm thanh được tạo ra như thế nào?
           </h3>
           <p className="text-xs text-slate-500 mt-0.5">
-            Gõ trống quan sát hạt gạo nhảy múa hoặc gảy dây đàn quan sát sóng âm
+            Gõ trống quan sát hạt gạo nảy lên hoặc gảy dây đàn quan sát dây rung
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -106,7 +131,7 @@ export const SoundVibrationSimulation: React.FC<Props> = ({ onExperimentAction }
                 mode === 'guitar' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Dây đàn ghita
+              Dây đàn ghi-ta
             </button>
           </div>
 
@@ -117,6 +142,8 @@ export const SoundVibrationSimulation: React.FC<Props> = ({ onExperimentAction }
             }}
             className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors text-xs flex items-center gap-1.5"
             title={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
+            aria-label={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
+            aria-pressed={isMuted}
           >
             {isMuted ? <VolumeX className="w-4 h-4 text-rose-500" /> : <Volume2 className="w-4 h-4 text-cyan-600" />}
           </button>
@@ -169,8 +196,17 @@ export const SoundVibrationSimulation: React.FC<Props> = ({ onExperimentAction }
                   fill="#fef3c7"
                   stroke="#b45309"
                   strokeWidth="4"
-                  className="cursor-pointer"
+                  className="cursor-pointer focus:outline-none"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Gõ vào mặt trống"
                   onClick={handleStrikeDrum}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleStrikeDrum();
+                    }
+                  }}
                 />
 
                 {/* Vibration Ripple Circles when vibrating */}
@@ -237,8 +273,17 @@ export const SoundVibrationSimulation: React.FC<Props> = ({ onExperimentAction }
                   stroke="#fbbf24"
                   strokeWidth="4"
                   strokeLinecap="round"
-                  className="cursor-pointer"
+                  className="cursor-pointer focus:outline-none"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Gảy dây đàn"
                   onClick={() => handlePluckGuitar()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handlePluckGuitar();
+                    }
+                  }}
                 />
 
                 {/* Ghost blurred lines showing vibration envelope */}
@@ -256,11 +301,11 @@ export const SoundVibrationSimulation: React.FC<Props> = ({ onExperimentAction }
             )}
           </svg>
 
-          {/* Oscilloscope Mini Waveform Bar */}
+          {/* Mini waveform bar (minh họa rung động) */}
           <div className="bg-slate-950 border border-slate-800 rounded-lg p-2.5 flex items-center justify-between">
             <span className="text-xs text-slate-400 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-cyan-400" />
-              Sóng âm trên máy hiện sóng:
+              Hình ảnh rung động (minh họa):
             </span>
             <div className="w-48 h-6 bg-slate-900 border border-slate-700 rounded flex items-center justify-center overflow-hidden">
               <svg viewBox="0 0 100 20" className="w-full h-full">
@@ -283,7 +328,7 @@ export const SoundVibrationSimulation: React.FC<Props> = ({ onExperimentAction }
                 Bảng điều khiển dao động
               </span>
               <span className="text-xs text-cyan-600 font-semibold font-mono">
-                {mode === 'drum' ? 'Trống da' : 'Đàn ghita'}
+                {mode === 'drum' ? 'Trống da' : 'Đàn ghi-ta'}
               </span>
             </div>
 
@@ -297,10 +342,8 @@ export const SoundVibrationSimulation: React.FC<Props> = ({ onExperimentAction }
                     {[1, 2, 3].map((f) => (
                       <button
                         key={f}
-                        onClick={() => {
-                          setStrikeForce(f);
-                          setIsDamped(false);
-                        }}
+                        aria-pressed={strikeForce === f}
+                        onClick={() => setStrikeForce(f)}
                         className={`py-1.5 text-xs font-semibold rounded-lg border transition-all ${
                           strikeForce === f
                             ? 'bg-amber-600 text-white border-amber-700 shadow-2xs'
@@ -325,7 +368,7 @@ export const SoundVibrationSimulation: React.FC<Props> = ({ onExperimentAction }
                     className="py-2.5 px-3 bg-slate-700 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5"
                   >
                     <Hand className="w-3.5 h-3.5" />
-                    Áp tay giữ trống
+                    {isDamped ? 'Đang áp tay...' : 'Áp tay giữ trống'}
                   </button>
                 </div>
               </div>

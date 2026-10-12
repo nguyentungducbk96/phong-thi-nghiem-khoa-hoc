@@ -19,9 +19,9 @@ const INITIAL_ITEMS: TestItem[] = [
   {
     id: 'nail',
     name: 'Đinh sắt',
-    material: 'Sắt nguyên chất (Fe)',
+    material: 'Sắt',
     isMagnetic: true,
-    explanation: 'Sắt là vật liệu sắt từ mạnh nên bị nam châm hút chặt.',
+    explanation: 'Đinh làm bằng sắt nên bị nam châm hút chặt.',
     x: 80,
     y: 70,
     isAttracted: false,
@@ -31,9 +31,9 @@ const INITIAL_ITEMS: TestItem[] = [
   {
     id: 'clip',
     name: 'Kẹp giấy thép',
-    material: 'Thép mạ kẽm (Hợp kim sắt)',
+    material: 'Thép (phần lớn là sắt)',
     isMagnetic: true,
-    explanation: 'Thép chứa phần lớn là sắt nên chịu lực hút từ mạnh.',
+    explanation: 'Thép có phần lớn là sắt nên bị nam châm hút.',
     x: 80,
     y: 140,
     isAttracted: false,
@@ -43,9 +43,9 @@ const INITIAL_ITEMS: TestItem[] = [
   {
     id: 'al_coin',
     name: 'Đồng xu nhôm',
-    material: 'Nhôm (Al)',
+    material: 'Nhôm',
     isMagnetic: false,
-    explanation: 'Kim loại nhôm không có tính từ nên nam châm không hút được.',
+    explanation: 'Nhôm là kim loại nhưng không bị nam châm hút. Không phải kim loại nào cũng bị hút!',
     x: 80,
     y: 210,
     isAttracted: false,
@@ -54,10 +54,10 @@ const INITIAL_ITEMS: TestItem[] = [
   },
   {
     id: 'ni_coin',
-    name: 'Đồng xu niken',
-    material: 'Mạ Niken (Ni)',
+    name: 'Đồng xu thép mạ niken',
+    material: 'Lõi thép, phủ lớp niken',
     isMagnetic: true,
-    explanation: 'Niken là kim loại có tính sắt từ nên bị nam châm hút.',
+    explanation: 'Đồng xu mẫu này có lõi thép và lớp niken bên ngoài, cả hai đều bị nam châm hút. Đồng xu làm bằng nhôm hay đồng thì không bị hút, nên phải biết đồng xu làm bằng gì.',
     x: 80,
     y: 280,
     isAttracted: false,
@@ -67,9 +67,9 @@ const INITIAL_ITEMS: TestItem[] = [
   {
     id: 'wood',
     name: 'Miếng gỗ nhỏ',
-    material: 'Gỗ tự nhiên (Cellulose)',
+    material: 'Gỗ',
     isMagnetic: false,
-    explanation: 'Gỗ là vật liệu phi kim, hoàn toàn không có tính từ.',
+    explanation: 'Gỗ không bị nam châm hút.',
     x: 420,
     y: 70,
     isAttracted: false,
@@ -79,9 +79,9 @@ const INITIAL_ITEMS: TestItem[] = [
   {
     id: 'ruler',
     name: 'Thước kẻ nhựa',
-    material: 'Nhựa dẻo (Plastic)',
+    material: 'Nhựa',
     isMagnetic: false,
-    explanation: 'Nhựa là chất cách điện và phi từ tính.',
+    explanation: 'Nhựa không bị nam châm hút.',
     x: 420,
     y: 140,
     isAttracted: false,
@@ -91,9 +91,9 @@ const INITIAL_ITEMS: TestItem[] = [
   {
     id: 'paper',
     name: 'Mảnh giấy nhỏ',
-    material: 'Giấy bột gỗ',
+    material: 'Giấy',
     isMagnetic: false,
-    explanation: 'Giấy không có từ tính, không bị nam châm tác dụng lực.',
+    explanation: 'Giấy không bị nam châm hút.',
     x: 420,
     y: 210,
     isAttracted: false,
@@ -102,10 +102,10 @@ const INITIAL_ITEMS: TestItem[] = [
   },
   {
     id: 'spoon',
-    name: 'Thìa inox 430',
-    material: 'Inox có từ tính (Ferritic)',
+    name: 'Thìa inox (mẫu)',
+    material: 'Inox loại bị nam châm hút',
     isMagnetic: true,
-    explanation: 'Inox hệ Ferritic chứa lượng sắt lớn nên bị nam châm hút dính.',
+    explanation: 'Có loại inox bị nam châm hút, nhưng nhiều loại inox không bị hút. Chiếc thìa trong mô phỏng này là loại inox bị hút. Ở nhà, em phải thử mới biết thìa của mình thuộc loại nào.',
     x: 420,
     y: 280,
     isAttracted: false,
@@ -218,7 +218,7 @@ export const MagnetMaterialsSimulation: React.FC<Props> = ({ onExperimentAction 
           {/* Status Indicator */}
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-slate-600 bg-white/90 border border-slate-200 px-3 py-1.5 rounded-lg shadow-2xs">
-              Đã kiểm tra: <span className="text-cyan-700 font-bold">{testedCount}/8 vật mẫu</span>
+              Đã kiểm tra: <span className="text-cyan-700 font-bold">{testedCount}/{items.length} vật mẫu</span>
             </span>
             <span className="text-xs font-semibold text-slate-600 bg-white/90 border border-slate-200 px-3 py-1.5 rounded-lg shadow-2xs">
               Vật bị hút: <span className="text-emerald-700 font-bold">{attractedCount} vật</span>
@@ -285,8 +285,17 @@ export const MagnetMaterialsSimulation: React.FC<Props> = ({ onExperimentAction 
               <g
                 key={it.id}
                 transform={`translate(${it.x}, ${it.y})`}
+                role="button"
+                tabIndex={0}
+                aria-label={`Đưa nam châm lại gần ${it.name}`}
                 onClick={() => testBringNear(it)}
-                className="cursor-pointer group transition-all duration-300"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    testBringNear(it);
+                  }
+                }}
+                className="cursor-pointer group transition-all duration-300 focus:outline-none"
               >
                 {/* Target Circle Backdrop */}
                 <circle
@@ -366,7 +375,7 @@ export const MagnetMaterialsSimulation: React.FC<Props> = ({ onExperimentAction 
                 Bảng ghi chép từ tính
               </span>
               <span className="text-xs text-indigo-600 font-semibold">
-                Lớp 4 - Vật liệu từ
+                Bị hút / Không bị hút
               </span>
             </div>
 
@@ -422,7 +431,7 @@ export const MagnetMaterialsSimulation: React.FC<Props> = ({ onExperimentAction 
                   </p>
                 ) : (
                   <p className="text-slate-600">
-                    Không phải mọi kim loại đều bị nam châm hút! Ví dụ, <strong>đồng xu bằng nhôm</strong> không hề có từ tính nên nam châm không thể hút.
+                    Không phải mọi kim loại đều bị nam châm hút! Ví dụ, <strong>đồng xu bằng nhôm</strong> không bị hút. Với đồng xu và inox, phải biết vật làm bằng gì (hoặc thử) mới biết có bị hút hay không.
                   </p>
                 )}
               </div>

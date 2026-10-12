@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { soundManager } from '../../utils/audio';
 import { RotateCcw, HelpCircle, CheckCircle2, AlertCircle, Volume2, VolumeX } from 'lucide-react';
 
@@ -44,6 +44,70 @@ export const AirPressureCupSimulation: React.FC<Props> = ({ onExperimentAction }
     }
   }, [depth, tilt, onExperimentAction]);
 
+  // ---- Kéo cốc bằng chuột hoặc ngón tay ----
+  // Kéo lên/xuống: nhúng cốc; kéo sang trái/phải: nghiêng cốc
+  const svgRef = useRef<SVGSVGElement>(null);
+  const dragRef = useRef<{ startX: number; startY: number; depth: number; tilt: number } | null>(null);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+
+  const toSvgPoint = (clientX: number, clientY: number) => {
+    const svg = svgRef.current;
+    const ctm = svg?.getScreenCTM();
+    if (!svg || !ctm) return null;
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const p = pt.matrixTransform(ctm.inverse());
+    return { x: p.x, y: p.y };
+  };
+
+  const clampDepth = (v: number) => Math.max(5, Math.min(95, Math.round(v)));
+  const clampTilt = (v: number) => Math.max(-35, Math.min(35, Math.round(v)));
+
+  const handleCupPointerDown = (e: React.PointerEvent) => {
+    const p = toSvgPoint(e.clientX, e.clientY);
+    if (!p) return;
+    e.preventDefault();
+    dragRef.current = { startX: p.x, startY: p.y, depth, tilt };
+    setIsDragging(true);
+    svgRef.current?.setPointerCapture?.(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    const start = dragRef.current;
+    if (!start) return;
+    const p = toSvgPoint(e.clientX, e.clientY);
+    if (!p) return;
+    setDepth(clampDepth(start.depth + (p.y - start.startY) / 1.5));
+    setTilt(clampTilt(start.tilt + (p.x - start.startX) / 3));
+  };
+
+  const handlePointerUp = () => {
+    if (!dragRef.current) return;
+    dragRef.current = null;
+    setIsDragging(false);
+    if (onExperimentAction) {
+      onExperimentAction(
+        'Kéo cốc',
+        `Độ sâu ${depth}%, nghiêng ${tilt}° (${depth > 45 ? 'cốc ở dưới nước' : 'cốc trên mặt nước'})`
+      );
+    }
+  };
+
+  const handleCupKeyDown = (e: React.KeyboardEvent) => {
+    const keys: Record<string, () => void> = {
+      ArrowDown: () => setDepth((d) => clampDepth(d + 5)),
+      ArrowUp: () => setDepth((d) => clampDepth(d - 5)),
+      ArrowLeft: () => setTilt((t) => clampTilt(t - 5)),
+      ArrowRight: () => setTilt((t) => clampTilt(t + 5))
+    };
+    if (keys[e.key]) {
+      e.preventDefault();
+      keys[e.key]();
+      onExperimentAction?.('Di chuyển cốc bằng bàn phím', e.key.replace('Arrow', 'Phím '));
+    }
+  };
+
   const handleReset = () => {
     setDepth(10);
     setTilt(0);
@@ -66,7 +130,7 @@ export const AirPressureCupSimulation: React.FC<Props> = ({ onExperimentAction }
             Mô phỏng: Chiếc cốc úp ngược trong chậu nước
           </h3>
           <p className="text-xs text-slate-500 mt-0.5">
-            Kéo cốc xuống nước, giữ thẳng đứng và thử nghiêng cốc để quan sát
+            Kéo chiếc cốc (hoặc dùng thanh trượt): kéo xuống để nhúng, kéo sang ngang để nghiêng
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -77,6 +141,7 @@ export const AirPressureCupSimulation: React.FC<Props> = ({ onExperimentAction }
             }}
             className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded-lg transition-colors text-xs flex items-center gap-1.5"
             title={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
+            aria-pressed={isMuted}
           >
             {isMuted ? <VolumeX className="w-4 h-4 text-rose-500" /> : <Volume2 className="w-4 h-4 text-cyan-600" />}
             <span className="hidden sm:inline">{isMuted ? 'Đã tắt tiếng' : 'Âm thanh'}</span>
@@ -132,7 +197,14 @@ export const AirPressureCupSimulation: React.FC<Props> = ({ onExperimentAction }
           </div>
 
           {/* SVG Laboratory Scene */}
-          <svg viewBox="0 0 500 360" className="w-full h-[340px] select-none">
+          <svg
+            ref={svgRef}
+            viewBox="0 0 500 360"
+            className="w-full h-[340px] select-none"
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+          >
             <defs>
               {/* Water Gradient */}
               <linearGradient id="tankWater" x1="0" y1="0" x2="0" y2="1">
@@ -199,8 +271,20 @@ export const AirPressureCupSimulation: React.FC<Props> = ({ onExperimentAction }
             {/* Base coordinate calculation: cup moves down based on depth, rotates by tilt */}
             <g
               transform={`translate(250, ${70 + (depth * 1.5)}) rotate(${tilt}) translate(-50, -90)`}
-              className="cursor-grab active:cursor-grabbing transition-transform duration-100 ease-out"
+              className={`${isDragging ? 'cursor-grabbing' : 'cursor-grab transition-transform duration-100 ease-out'} focus:outline-none`}
+              style={{ touchAction: 'none' }}
+              role="slider"
+              tabIndex={0}
+              aria-label="Chiếc cốc: kéo lên xuống để nhúng, kéo sang ngang để nghiêng. Dùng phím mũi tên trên bàn phím."
+              aria-valuemin={5}
+              aria-valuemax={95}
+              aria-valuenow={depth}
+              aria-valuetext={`Độ sâu ${depth}%, nghiêng ${tilt} độ`}
+              onPointerDown={handleCupPointerDown}
+              onKeyDown={handleCupKeyDown}
             >
+              {/* Vùng bấm rộng hơn để dễ kéo trên màn hình cảm ứng */}
+              <rect x="-10" y="-40" width="120" height="170" fill="transparent" />
               {/* Hand Holding the Cup (Educational visual) */}
               <path
                 d="M 20 -25 C 20 -35, 80 -35, 80 -25 L 75 -5 L 25 -5 Z"
@@ -317,8 +401,8 @@ export const AirPressureCupSimulation: React.FC<Props> = ({ onExperimentAction }
                 onChange={(e) => {
                   const val = Number(e.target.value);
                   setDepth(val);
-                  if (val > 45 && onExperimentAction) {
-                    onExperimentAction('Nhúng cốc', `Nhúng cốc xuống độ sâu ${val}%`);
+                  if (onExperimentAction) {
+                    onExperimentAction('Nhúng cốc bằng thanh trượt', `Độ sâu ${val}%`);
                   }
                 }}
                 className="w-full accent-cyan-600 h-2 bg-slate-200 rounded-lg cursor-pointer"
@@ -342,7 +426,11 @@ export const AirPressureCupSimulation: React.FC<Props> = ({ onExperimentAction }
                 min="-35"
                 max="35"
                 value={tilt}
-                onChange={(e) => setTilt(Number(e.target.value))}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setTilt(val);
+                  onExperimentAction?.('Nghiêng cốc bằng thanh trượt', `${val}°`);
+                }}
                 className="w-full accent-cyan-600 h-2 bg-slate-200 rounded-lg cursor-pointer"
               />
               <div className="flex justify-between text-[11px] text-slate-400 mt-1">
@@ -359,6 +447,7 @@ export const AirPressureCupSimulation: React.FC<Props> = ({ onExperimentAction }
                   setDepth(80);
                   setTilt(0);
                   soundManager.playBubble(0.8);
+                  onExperimentAction?.('Nhúng thẳng đứng', 'Cốc ở dưới nước, giữ thẳng');
                 }}
                 className="py-2 px-3 text-xs font-medium rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-cyan-50 hover:text-cyan-800 hover:border-cyan-200 transition-colors shadow-2xs"
               >
@@ -368,6 +457,7 @@ export const AirPressureCupSimulation: React.FC<Props> = ({ onExperimentAction }
                 onClick={() => {
                   setDepth(80);
                   setTilt(25);
+                  onExperimentAction?.('Nghiêng cốc', 'Cốc ở dưới nước, nghiêng 25°');
                 }}
                 className="py-2 px-3 text-xs font-medium rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-200 transition-colors shadow-2xs"
               >
@@ -394,7 +484,7 @@ export const AirPressureCupSimulation: React.FC<Props> = ({ onExperimentAction }
                 )}
                 {!isSubmerged && (
                   <p className="text-slate-500">
-                    Em hãy kéo cốc nhúng sâu vào chậu nước để bắt đầu thử nghiệm nhé!
+                    Em hãy kéo chiếc cốc xuống chậu nước (hoặc dùng thanh trượt) để bắt đầu nhé!
                   </p>
                 )}
               </div>

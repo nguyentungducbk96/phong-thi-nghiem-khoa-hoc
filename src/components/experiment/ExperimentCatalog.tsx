@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Experiment, TopicId } from '../../types';
-import { SCIENCE_TOPICS } from '../../data/scienceData';
+import { clickable } from '../../utils/a11y';
+import { SCIENCE_TOPICS, countExperimentsByTopic } from '../../data/scienceData';
 import { Search, FlaskConical, Clock, CheckCircle2, Filter, ArrowRight } from 'lucide-react';
 
 interface Props {
@@ -55,7 +56,7 @@ export const ExperimentCatalog: React.FC<Props> = ({
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Mô phỏng tương tác 100% chạy trực tiếp trên trình duyệt, có phản hồi trực quan khi thao tác
+            Mô phỏng tương tác chạy trực tiếp trên trình duyệt, có phản hồi khi em thao tác
           </p>
         </div>
 
@@ -133,6 +134,9 @@ export const ExperimentCatalog: React.FC<Props> = ({
               }`}
             >
               {topic.name}
+              {countExperimentsByTopic(topic.id) === 0 && (
+                <span className="ml-1 text-[10px] font-normal opacity-80">(Sắp có)</span>
+              )}
             </button>
           ))}
         </div>
@@ -142,7 +146,11 @@ export const ExperimentCatalog: React.FC<Props> = ({
       {filteredExperiments.length === 0 ? (
         <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 space-y-3">
           <FlaskConical className="w-12 h-12 text-slate-300 mx-auto" />
-          <h3 className="text-base font-bold text-slate-800">Không tìm thấy thí nghiệm nào phù hợp</h3>
+          <h3 className="text-base font-bold text-slate-800">
+            {selectedTopic !== 'all' && countExperimentsByTopic(selectedTopic as TopicId) === 0
+              ? 'Chủ đề này sắp có thí nghiệm'
+              : 'Không tìm thấy thí nghiệm nào phù hợp'}
+          </h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
             Em hãy thử đổi từ khóa tìm kiếm hoặc bấm nút &quot;Tất cả chủ đề&quot; để xem đầy đủ danh mục nhé!
           </p>
@@ -166,8 +174,8 @@ export const ExperimentCatalog: React.FC<Props> = ({
             return (
               <div
                 key={exp.id}
-                onClick={() => onSelectExperiment(exp)}
-                className="bg-white border border-slate-200 rounded-3xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col justify-between group cursor-pointer"
+                {...clickable(() => onSelectExperiment(exp), `Mở thí nghiệm: ${exp.title}`)}
+                className="bg-white border border-slate-200 rounded-3xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col justify-between group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
               >
                 <div>
                   <div className="relative aspect-4/3 bg-slate-100 overflow-hidden">

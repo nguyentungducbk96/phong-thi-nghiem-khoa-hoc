@@ -14,6 +14,7 @@ import {
   Users,
   Compass
 } from 'lucide-react';
+import { clickable } from '../../utils/a11y';
 
 interface Props {
   currentTab: string;
@@ -49,8 +50,8 @@ export const Navbar: React.FC<Props> = ({
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Zone 1: Logo & Brand Lockup */}
           <div
-            onClick={() => onSelectTab('home')}
-            className="flex items-center gap-3 cursor-pointer shrink-0"
+            {...clickable(() => onSelectTab('home'), 'Về trang chủ')}
+            className="flex items-center gap-3 cursor-pointer shrink-0 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
           >
             {/* Logo combining Flask, Atom Ring, and Star */}
             <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/20">
@@ -104,7 +105,7 @@ export const Navbar: React.FC<Props> = ({
               </div>
             )}
 
-            {/* AI Assistant Button */}
+            {/* Assistant Button (nội dung có sẵn, không phải AI) */}
             <button
               onClick={onOpenAssistant}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold text-xs shadow-xs hover:from-cyan-700 hover:to-blue-700 transition-all"
@@ -117,6 +118,7 @@ export const Navbar: React.FC<Props> = ({
             {/* Role Switcher Menu */}
             <div className="relative group">
               <select
+                aria-label="Chọn vai trò"
                 value={currentRole}
                 onChange={(e) => onSelectRole(e.target.value as UserRole)}
                 className="appearance-none bg-slate-100 hover:bg-slate-200/80 border border-slate-200 text-slate-700 font-bold text-xs py-1.5 pl-3 pr-7 rounded-xl focus:outline-none cursor-pointer transition-colors"

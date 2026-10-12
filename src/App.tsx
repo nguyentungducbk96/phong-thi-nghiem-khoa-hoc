@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { UserRole, Experiment, NotebookEntry, LearningResource, ScienceVideo, Assignment, Classroom } from './types';
+import {
+  UserRole,
+  Experiment,
+  NotebookEntry,
+  LearningResource,
+  ScienceVideo,
+  Assignment,
+  Classroom,
+  QuizAttempt,
+  ExperimentResult
+} from './types';
 import {
   SCIENCE_TOPICS,
   EXPERIMENTS_DATA,
-  INITIAL_NOTEBOOKS,
   INITIAL_QUIZZES,
-  INITIAL_CLASSROOMS,
-  INITIAL_ASSIGNMENTS,
-  INITIAL_RESOURCES,
-  INITIAL_VIDEOS
+  INITIAL_VIDEOS,
+  countExperimentsByTopic
 } from './data/scienceData';
 import { Navbar } from './components/layout/Navbar';
 import { HomeView } from './components/home/HomeView';
@@ -20,7 +27,12 @@ import { VideoLibrary } from './components/resources/VideoLibrary';
 import { DocumentLibrary } from './components/resources/DocumentLibrary';
 import { TeacherDashboard } from './components/teacher/TeacherDashboard';
 import { ScienceAssistantModal } from './components/assistant/ScienceAssistantModal';
-import { soundManager } from './utils/audio';
+import { loadData, saveData, migrateLegacyStorage, STORAGE_KEYS, newId } from './utils/storage';
+import { computeBadges } from './utils/progress';
+import { clickable } from './utils/a11y';
+
+// Bỏ dữ liệu mẫu giả của phiên bản cũ trước khi đọc dữ liệu (chạy một lần khi tải trang)
+migrateLegacyStorage();
 
 export default function App() {
   // Current active navigation tab
@@ -32,78 +44,59 @@ export default function App() {
   // Topic filter when navigating from topic cards
   const [filterTopicId, setFilterTopicId] = useState<string | undefined>(undefined);
 
-  // Student progress state (stored in localStorage)
-  const [completedExpIds, setCompletedExpIds] = useState<string[]>(() => {
-    const saved = localStorage.getItem('ssl_completed_exps');
-    return saved ? JSON.parse(saved) : ['khong-khi-chiem-cho'];
-  });
-
-  const [studentPoints, setStudentPoints] = useState<number>(() => {
-    const saved = localStorage.getItem('ssl_student_points');
-    return saved ? Number(saved) : 180;
-  });
-
-  // Notebook Entries state
-  const [notebookEntries, setNotebookEntries] = useState<NotebookEntry[]>(() => {
-    const saved = localStorage.getItem('ssl_notebooks');
-    return saved ? JSON.parse(saved) : INITIAL_NOTEBOOKS;
-  });
-
-  // Resources state
-  const [resources, setResources] = useState<LearningResource[]>(() => {
-    const saved = localStorage.getItem('ssl_resources');
-    return saved ? JSON.parse(saved) : INITIAL_RESOURCES;
-  });
-
-  // Videos state
-  const [videos, setVideos] = useState<ScienceVideo[]>(() => {
-    const saved = localStorage.getItem('ssl_videos');
-    return saved ? JSON.parse(saved) : INITIAL_VIDEOS;
-  });
-
-  // Classrooms state
-  const [classrooms, setClassrooms] = useState<Classroom[]>(() => {
-    const saved = localStorage.getItem('ssl_classrooms');
-    return saved ? JSON.parse(saved) : INITIAL_CLASSROOMS;
-  });
-
-  // Assignments state
-  const [assignments, setAssignments] = useState<Assignment[]>(() => {
-    const saved = localStorage.getItem('ssl_assignments');
-    return saved ? JSON.parse(saved) : INITIAL_ASSIGNMENTS;
-  });
+  // Tiến độ học sinh: người dùng mới bắt đầu từ 0
+  const [completedExpIds, setCompletedExpIds] = useState<string[]>(() =>
+    loadData<string[]>(STORAGE_KEYS.completedExps, [])
+  );
+  const [studentPoints, setStudentPoints] = useState<number>(() =>
+    loadData<number>(STORAGE_KEYS.studentPoints, 0)
+  );
+  const [notebookEntries, setNotebookEntries] = useState<NotebookEntry[]>(() =>
+    loadData<NotebookEntry[]>(STORAGE_KEYS.notebooks, [])
+  );
+  const [resources, setResources] = useState<LearningResource[]>(() =>
+    loadData<LearningResource[]>(STORAGE_KEYS.resources, [])
+  );
+  const [resourceBookmarks, setResourceBookmarks] = useState<string[]>(() =>
+    loadData<string[]>(STORAGE_KEYS.resourceBookmarks, [])
+  );
+  const [videos, setVideos] = useState<ScienceVideo[]>(() =>
+    loadData<ScienceVideo[]>(STORAGE_KEYS.videos, INITIAL_VIDEOS)
+  );
+  const [classrooms, setClassrooms] = useState<Classroom[]>(() =>
+    loadData<Classroom[]>(STORAGE_KEYS.classrooms, [])
+  );
+  const [assignments, setAssignments] = useState<Assignment[]>(() =>
+    loadData<Assignment[]>(STORAGE_KEYS.assignments, [])
+  );
+  const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>(() =>
+    loadData<QuizAttempt[]>(STORAGE_KEYS.quizAttempts, [])
+  );
+  const [experimentResults, setExperimentResults] = useState<ExperimentResult[]>(() =>
+    loadData<ExperimentResult[]>(STORAGE_KEYS.experimentResults, [])
+  );
 
   // Assistant modal visibility
   const [isAssistantOpen, setIsAssistantOpen] = useState<boolean>(false);
 
-  // Sync state to LocalStorage
-  useEffect(() => {
-    localStorage.setItem('ssl_completed_exps', JSON.stringify(completedExpIds));
-  }, [completedExpIds]);
+  // Đồng bộ trạng thái xuống lớp lưu trữ
+  useEffect(() => saveData(STORAGE_KEYS.completedExps, completedExpIds), [completedExpIds]);
+  useEffect(() => saveData(STORAGE_KEYS.studentPoints, studentPoints), [studentPoints]);
+  useEffect(() => saveData(STORAGE_KEYS.notebooks, notebookEntries), [notebookEntries]);
+  useEffect(() => saveData(STORAGE_KEYS.resources, resources), [resources]);
+  useEffect(() => saveData(STORAGE_KEYS.resourceBookmarks, resourceBookmarks), [resourceBookmarks]);
+  useEffect(() => saveData(STORAGE_KEYS.videos, videos), [videos]);
+  useEffect(() => saveData(STORAGE_KEYS.classrooms, classrooms), [classrooms]);
+  useEffect(() => saveData(STORAGE_KEYS.assignments, assignments), [assignments]);
+  useEffect(() => saveData(STORAGE_KEYS.quizAttempts, quizAttempts), [quizAttempts]);
+  useEffect(() => saveData(STORAGE_KEYS.experimentResults, experimentResults), [experimentResults]);
 
-  useEffect(() => {
-    localStorage.setItem('ssl_student_points', String(studentPoints));
-  }, [studentPoints]);
-
-  useEffect(() => {
-    localStorage.setItem('ssl_notebooks', JSON.stringify(notebookEntries));
-  }, [notebookEntries]);
-
-  useEffect(() => {
-    localStorage.setItem('ssl_resources', JSON.stringify(resources));
-  }, [resources]);
-
-  useEffect(() => {
-    localStorage.setItem('ssl_videos', JSON.stringify(videos));
-  }, [videos]);
-
-  useEffect(() => {
-    localStorage.setItem('ssl_classrooms', JSON.stringify(classrooms));
-  }, [classrooms]);
-
-  useEffect(() => {
-    localStorage.setItem('ssl_assignments', JSON.stringify(assignments));
-  }, [assignments]);
+  const badges = computeBadges({
+    completedExpIds,
+    totalExperiments: EXPERIMENTS_DATA.length,
+    notebookCount: notebookEntries.length,
+    quizAttempts
+  });
 
   // Handlers
   const handleSelectExperiment = (exp: Experiment) => {
@@ -112,17 +105,26 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Chỉ cộng XP ở lần hoàn thành đầu tiên của mỗi thí nghiệm
   const handleCompleteExperiment = (expId: string, earnedScore: number) => {
-    if (!completedExpIds.includes(expId)) {
-      setCompletedExpIds((prev) => [...prev, expId]);
-    }
+    if (completedExpIds.includes(expId)) return;
+    setCompletedExpIds((prev) => (prev.includes(expId) ? prev : [...prev, expId]));
     setStudentPoints((p) => p + earnedScore);
+  };
+
+  const handleRecordExperimentResult = (result: ExperimentResult) => {
+    setExperimentResults((prev) => [result, ...prev]);
+  };
+
+  const handleQuizComplete = (attempt: QuizAttempt) => {
+    setQuizAttempts((prev) => [attempt, ...prev]);
+    if (attempt.xpAwarded > 0) setStudentPoints((p) => p + attempt.xpAwarded);
   };
 
   const handleSaveToNotebook = (entryData: Omit<NotebookEntry, 'id'>) => {
     const newEntry: NotebookEntry = {
       ...entryData,
-      id: 'nb_' + Date.now()
+      id: newId('nb')
     };
     setNotebookEntries((prev) => [newEntry, ...prev]);
   };
@@ -141,8 +143,17 @@ export default function App() {
     setResources((prev) => [res, ...prev]);
   };
 
+  const handleUpdateResource = (id: string, updated: Partial<LearningResource>) => {
+    setResources((prev) => prev.map((r) => (r.id === id ? { ...r, ...updated } : r)));
+  };
+
   const handleDeleteResource = (id: string) => {
     setResources((prev) => prev.filter((r) => r.id !== id));
+    setResourceBookmarks((prev) => prev.filter((b) => b !== id));
+  };
+
+  const handleToggleResourceBookmark = (id: string) => {
+    setResourceBookmarks((prev) => (prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]));
   };
 
   const handleAddVideo = (vid: ScienceVideo) => {
@@ -161,6 +172,10 @@ export default function App() {
 
   const handleAddClassroom = (cls: Classroom) => {
     setClassrooms((prev) => [...prev, cls]);
+  };
+
+  const handleUpdateClassroom = (id: string, updated: Partial<Classroom>) => {
+    setClassrooms((prev) => prev.map((c) => (c.id === id ? { ...c, ...updated } : c)));
   };
 
   const handleSelectTopicFromHome = (topicId: string) => {
@@ -197,7 +212,7 @@ export default function App() {
         <div className="bg-teal-900 text-teal-100 px-4 py-2 text-xs font-semibold flex items-center justify-between">
           <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
             <span>
-              🔒 Đang đăng nhập với vai trò: <strong>{currentRole === 'teacher' ? 'GIÁO VIÊN' : 'QUẢN TRỊ VIÊN'}</strong>. Em có toàn quyền quản lý lớp học, phân công bài tập và đăng tải tài liệu.
+              🔒 Đang xem với vai trò: <strong>{currentRole === 'teacher' ? 'GIÁO VIÊN' : 'QUẢN TRỊ VIÊN'}</strong>. Chưa có đăng nhập thật: dữ liệu chỉ lưu trên thiết bị này.
             </span>
             <button
               onClick={() => setCurrentRole('student')}
@@ -218,6 +233,8 @@ export default function App() {
             topics={SCIENCE_TOPICS}
             completedExpIds={completedExpIds}
             studentPoints={studentPoints}
+            notebookCount={notebookEntries.length}
+            badges={badges}
             onSelectExperiment={handleSelectExperiment}
             onSelectTopic={handleSelectTopicFromHome}
             onExploreAll={() => {
@@ -242,29 +259,35 @@ export default function App() {
           <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 space-y-6">
             <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8">
               <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
-                8 Chủ Đề Khoa Học Lớp 4 (Chương trình GDPT 2018)
+                Chủ đề khoa học lớp 4
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                Bấm vào từng chủ đề để khám phá các bài thực nghiệm tương tác phù hợp
+                Bấm vào từng chủ đề để xem các thí nghiệm. Thầy cô có thể điều chỉnh chủ đề cho khớp với sách nhà trường đang dùng.
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {SCIENCE_TOPICS.map((topic) => (
-                <div
-                  key={topic.id}
-                  onClick={() => handleSelectTopicFromHome(topic.id)}
-                  className="bg-white border border-slate-200 hover:border-cyan-400 rounded-2xl p-5 hover:shadow-md transition-all cursor-pointer space-y-3"
-                >
-                  <span className="text-xs font-bold text-cyan-700 bg-cyan-50 px-2.5 py-1 rounded-full border border-cyan-200">
-                    {topic.experimentCount} thí nghiệm
-                  </span>
-                  <h3 className="text-base font-bold text-slate-900">{topic.name}</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed">{topic.description}</p>
-                  <span className="text-[11px] font-mono text-slate-400 block pt-2 border-t border-slate-100">
-                    {topic.curriculumStandard}
-                  </span>
-                </div>
-              ))}
+              {SCIENCE_TOPICS.map((topic) => {
+                const count = countExperimentsByTopic(topic.id);
+                return (
+                  <div
+                    key={topic.id}
+                    {...clickable(() => handleSelectTopicFromHome(topic.id), `Chủ đề ${topic.name}`)}
+                    className="bg-white border border-slate-200 hover:border-cyan-400 rounded-2xl p-5 hover:shadow-md transition-all cursor-pointer space-y-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                  >
+                    {count > 0 ? (
+                      <span className="text-xs font-bold text-cyan-700 bg-cyan-50 px-2.5 py-1 rounded-full border border-cyan-200">
+                        {count} thí nghiệm
+                      </span>
+                    ) : (
+                      <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
+                        Sắp có
+                      </span>
+                    )}
+                    <h3 className="text-base font-bold text-slate-900">{topic.name}</h3>
+                    <p className="text-xs text-slate-500 leading-relaxed">{topic.description}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -272,10 +295,13 @@ export default function App() {
         {/* TAB 4: 5-STEP EXPERIMENT WORKFLOW */}
         {currentTab === 'experiment-detail' && activeExperiment && (
           <FiveStepExperimentFlow
+            key={activeExperiment.id}
             experiment={activeExperiment}
+            isAlreadyCompleted={completedExpIds.includes(activeExperiment.id)}
             onBack={() => setCurrentTab('experiments')}
             onSaveToNotebook={handleSaveToNotebook}
             onCompleteExperiment={handleCompleteExperiment}
+            onRecordResult={handleRecordExperimentResult}
           />
         )}
 
@@ -293,9 +319,12 @@ export default function App() {
         {currentTab === 'documents' && (
           <DocumentLibrary
             resources={resources}
+            bookmarks={resourceBookmarks}
             isTeacher={currentRole !== 'student'}
             onAddResource={handleAddResource}
+            onUpdateResource={handleUpdateResource}
             onDeleteResource={handleDeleteResource}
+            onToggleBookmark={handleToggleResourceBookmark}
           />
         )}
 
@@ -303,9 +332,8 @@ export default function App() {
         {currentTab === 'quiz' && (
           <QuizChallenge
             quizzes={INITIAL_QUIZZES}
-            onQuizComplete={(quizId, score) => {
-              setStudentPoints((p) => p + score);
-            }}
+            attempts={quizAttempts}
+            onQuizComplete={handleQuizComplete}
           />
         )}
 
@@ -325,11 +353,24 @@ export default function App() {
             classrooms={classrooms}
             assignments={assignments}
             experiments={EXPERIMENTS_DATA}
+            quizzes={INITIAL_QUIZZES}
+            quizAttempts={quizAttempts}
+            experimentResults={experimentResults}
+            deviceProgress={{
+              completedCount: completedExpIds.length,
+              points: studentPoints,
+              notebookCount: notebookEntries.length
+            }}
             onSelectExperimentToPresent={(exp) => {
               handleSelectExperiment(exp);
             }}
+            onOpenNotebook={() => {
+              setCurrentTab('notebook');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
             onAddAssignment={handleAddAssignment}
             onAddClassroom={handleAddClassroom}
+            onUpdateClassroom={handleUpdateClassroom}
           />
         )}
       </main>
@@ -353,9 +394,9 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4">
-            <span>Dành cho học sinh & giáo viên Khoa học Lớp 4</span>
+            <span>Dành cho học sinh & giáo viên Khoa học lớp 4</span>
             <span>·</span>
-            <span>GDPT 2018</span>
+            <span>Dữ liệu đang lưu trên thiết bị này</span>
           </div>
         </div>
       </footer>

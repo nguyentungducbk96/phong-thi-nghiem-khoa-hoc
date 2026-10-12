@@ -21,6 +21,8 @@ export const ScientistNotebook: React.FC<Props> = ({
   );
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editNote, setEditNote] = useState<string>('');
+  const [editObservation, setEditObservation] = useState<string>('');
+  const [editQuestion, setEditQuestion] = useState<string>('');
   const [showNewModal, setShowNewModal] = useState<boolean>(false);
 
   // New entry form state
@@ -40,13 +42,27 @@ export const ScientistNotebook: React.FC<Props> = ({
     window.print();
   };
 
+  const startEdit = (entry: NotebookEntry) => {
+    setEditNote(entry.studentNotes || '');
+    setEditObservation(entry.observation || '');
+    setEditQuestion(entry.questionsExplored || '');
+    setIsEditing(true);
+  };
+
   const handleSaveEdit = () => {
     if (selectedEntry) {
-      onUpdateEntry(selectedEntry.id, { studentNotes: editNote });
-      setSelectedEntry({ ...selectedEntry, studentNotes: editNote });
+      const updated = {
+        studentNotes: editNote.trim(),
+        observation: editObservation.trim(),
+        questionsExplored: editQuestion.trim() || undefined
+      };
+      onUpdateEntry(selectedEntry.id, updated);
+      setSelectedEntry({ ...selectedEntry, ...updated });
       setIsEditing(false);
     }
   };
+
+  const emptyText = <span className="italic text-slate-400">(Chưa ghi)</span>;
 
   const handleCreateNew = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,11 +72,11 @@ export const ScientistNotebook: React.FC<Props> = ({
       experimentId: 'custom_' + Date.now(),
       experimentTitle: newTitle,
       date: new Date().toLocaleDateString('vi-VN'),
-      hypothesis: newHypothesis || 'Chưa ghi dự đoán',
-      operations: 'Thực nghiệm tự ghi chép',
-      observation: newObservation || 'Đang quan sát',
-      conclusion: newConclusion || 'Chưa có kết luận',
-      studentNotes: newNotes
+      hypothesis: newHypothesis.trim(),
+      operations: '',
+      observation: newObservation.trim(),
+      conclusion: newConclusion.trim(),
+      studentNotes: newNotes.trim()
     };
 
     onAddEntry(newObj);
@@ -152,7 +168,7 @@ export const ScientistNotebook: React.FC<Props> = ({
                     {entry.experimentTitle}
                   </h3>
                   <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                    <strong>Kết luận:</strong> {entry.conclusion}
+                    <strong>Kết luận:</strong> {entry.conclusion || '(Chưa ghi)'}
                   </p>
                 </button>
               ))
@@ -176,15 +192,12 @@ export const ScientistNotebook: React.FC<Props> = ({
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => {
-                      setIsEditing(!isEditing);
-                      setEditNote(selectedEntry.studentNotes);
-                    }}
+                    onClick={() => (isEditing ? setIsEditing(false) : startEdit(selectedEntry))}
                     className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors text-xs flex items-center gap-1"
-                    title="Chỉnh sửa ghi chú cá nhân"
+                    title="Chỉnh sửa phần em tự viết"
                   >
                     <Edit3 className="w-4 h-4 text-cyan-600" />
-                    <span>Sửa ghi chú</span>
+                    <span>{isEditing ? 'Đang sửa' : 'Sửa bài ghi'}</span>
                   </button>
                   <button
                     onClick={() => {
@@ -195,6 +208,7 @@ export const ScientistNotebook: React.FC<Props> = ({
                     }}
                     className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors text-xs"
                     title="Xóa bài ghi"
+                    aria-label="Xóa bài ghi"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -209,28 +223,38 @@ export const ScientistNotebook: React.FC<Props> = ({
                     1. Giả thuyết ban đầu (Dự đoán):
                   </span>
                   <p className="text-xs sm:text-sm text-slate-800 leading-relaxed font-medium">
-                    {selectedEntry.hypothesis}
+                    {selectedEntry.hypothesis || emptyText}
                   </p>
                 </div>
 
                 {/* 2. Operations & Procedure */}
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
                   <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
-                    2. Thao tác thí nghiệm đã làm:
+                    2. Các thao tác em đã làm <span className="normal-case font-normal">(ứng dụng tự ghi lại)</span>:
                   </span>
                   <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
-                    {selectedEntry.operations}
+                    {selectedEntry.operations || emptyText}
                   </p>
                 </div>
 
                 {/* 3. Observations */}
                 <div className="p-4 rounded-xl bg-sky-50/60 border border-sky-200/80 space-y-1">
                   <span className="text-[11px] font-bold text-sky-800 uppercase tracking-wide">
-                    3. Hiện tượng quan sát được:
+                    3. Điều em quan sát được:
                   </span>
-                  <p className="text-xs sm:text-sm text-slate-800 leading-relaxed">
-                    {selectedEntry.observation}
-                  </p>
+                  {isEditing ? (
+                    <textarea
+                      rows={3}
+                      aria-label="Điều em quan sát được"
+                      value={editObservation}
+                      onChange={(e) => setEditObservation(e.target.value)}
+                      className="w-full text-xs p-3 rounded-lg border border-slate-300 bg-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                    />
+                  ) : (
+                    <p className="text-xs sm:text-sm text-slate-800 leading-relaxed">
+                      {selectedEntry.observation || emptyText}
+                    </p>
+                  )}
                 </div>
 
                 {/* 4. Scientific Conclusion */}
@@ -239,7 +263,7 @@ export const ScientistNotebook: React.FC<Props> = ({
                     4. Kết luận khoa học rút ra:
                   </span>
                   <p className="text-xs sm:text-sm text-emerald-950 font-bold leading-relaxed">
-                    {selectedEntry.conclusion}
+                    {selectedEntry.conclusion || emptyText}
                   </p>
                 </div>
 
@@ -253,8 +277,18 @@ export const ScientistNotebook: React.FC<Props> = ({
                     <div className="space-y-2">
                       <textarea
                         rows={3}
+                        aria-label="Cảm nghĩ của em"
+                        placeholder="Cảm nghĩ hoặc điều em phát hiện..."
                         value={editNote}
                         onChange={(e) => setEditNote(e.target.value)}
+                        className="w-full text-xs p-3 rounded-lg border border-slate-300 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                      />
+                      <input
+                        type="text"
+                        aria-label="Câu hỏi em muốn tìm hiểu thêm"
+                        placeholder="Câu hỏi em muốn tìm hiểu thêm..."
+                        value={editQuestion}
+                        onChange={(e) => setEditQuestion(e.target.value)}
                         className="w-full text-xs p-3 rounded-lg border border-slate-300 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
                       />
                       <div className="flex justify-end gap-2">
@@ -273,9 +307,16 @@ export const ScientistNotebook: React.FC<Props> = ({
                       </div>
                     </div>
                   ) : (
-                    <p className="text-xs text-slate-700 italic leading-relaxed">
-                      {selectedEntry.studentNotes || 'Chưa có ghi chú bổ sung.'}
-                    </p>
+                    <div className="space-y-1">
+                      <p className="text-xs text-slate-700 italic leading-relaxed">
+                        {selectedEntry.studentNotes || 'Chưa có ghi chú bổ sung.'}
+                      </p>
+                      {selectedEntry.questionsExplored && (
+                        <p className="text-xs text-slate-700 leading-relaxed">
+                          <strong>Câu hỏi muốn tìm hiểu thêm:</strong> {selectedEntry.questionsExplored}
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

@@ -1,4 +1,4 @@
-import { ScienceTopic, Experiment, Quiz, Classroom, LearningResource, ScienceVideo, NotebookEntry, Assignment } from '../types';
+import { ScienceTopic, Experiment, Quiz, ScienceVideo, TopicId } from '../types';
 
 export const SCIENCE_TOPICS: ScienceTopic[] = [
   {
@@ -7,8 +7,6 @@ export const SCIENCE_TOPICS: ScienceTopic[] = [
     iconName: 'Sparkles',
     color: 'from-amber-500 to-orange-500',
     description: 'Tính chất và sự chuyển thể của các chất xung quanh chúng ta',
-    experimentCount: 3,
-    curriculumStandard: 'Khoa học 4 - Chủ đề 1: Chất'
   },
   {
     id: 'nang-luong',
@@ -16,8 +14,6 @@ export const SCIENCE_TOPICS: ScienceTopic[] = [
     iconName: 'Zap',
     color: 'from-yellow-400 to-amber-600',
     description: 'Năng lượng điện, nguồn năng lượng và cách sử dụng an toàn, tiết kiệm',
-    experimentCount: 2,
-    curriculumStandard: 'Khoa học 4 - Chủ đề 2: Năng lượng'
   },
   {
     id: 'khong-khi-nuoc',
@@ -25,8 +21,6 @@ export const SCIENCE_TOPICS: ScienceTopic[] = [
     iconName: 'Droplets',
     color: 'from-cyan-500 to-blue-600',
     description: 'Tính chất, sự chiếm chỗ của không khí và vòng tuần hoàn của nước',
-    experimentCount: 4,
-    curriculumStandard: 'Khoa học 4 - Chủ đề 1 & 2: Nước và Không khí'
   },
   {
     id: 'anh-sang-am-thanh',
@@ -34,8 +28,6 @@ export const SCIENCE_TOPICS: ScienceTopic[] = [
     iconName: 'Sun',
     color: 'from-sky-400 to-indigo-600',
     description: 'Sự truyền thẳng của ánh sáng, bóng tối và sự lan truyền dao động âm thanh',
-    experimentCount: 3,
-    curriculumStandard: 'Khoa học 4 - Ánh sáng và Âm thanh'
   },
   {
     id: 'nhiet',
@@ -43,8 +35,6 @@ export const SCIENCE_TOPICS: ScienceTopic[] = [
     iconName: 'Flame',
     color: 'from-orange-500 to-red-600',
     description: 'Sự dẫn nhiệt, nhiệt độ và các hiện tượng bay hơi, ngưng tụ',
-    experimentCount: 2,
-    curriculumStandard: 'Khoa học 4 - Nhiệt và sự truyền nhiệt'
   },
   {
     id: 'thuc-vat-dong-vat',
@@ -52,8 +42,6 @@ export const SCIENCE_TOPICS: ScienceTopic[] = [
     iconName: 'Leaf',
     color: 'from-emerald-500 to-teal-600',
     description: 'Các điều kiện cần thiết để thực vật và động vật sinh trưởng và phát triển',
-    experimentCount: 3,
-    curriculumStandard: 'Khoa học 4 - Thực vật và động vật'
   },
   {
     id: 'con-nguoi-suc-khoe',
@@ -61,8 +49,6 @@ export const SCIENCE_TOPICS: ScienceTopic[] = [
     iconName: 'HeartPulse',
     color: 'from-rose-500 to-pink-600',
     description: 'Dinh dưỡng hợp lý, bảo vệ cơ thể và phòng tránh bệnh học đường',
-    experimentCount: 2,
-    curriculumStandard: 'Khoa học 4 - Con người và sức khỏe'
   },
   {
     id: 'sinh-vat-moi-truong',
@@ -70,8 +56,6 @@ export const SCIENCE_TOPICS: ScienceTopic[] = [
     iconName: 'Globe2',
     color: 'from-teal-500 to-emerald-700',
     description: 'Mối quan hệ qua lại giữa sinh vật và môi trường sống quanh ta',
-    experimentCount: 2,
-    curriculumStandard: 'Khoa học 4 - Môi trường và chuỗi thức ăn'
   }
 ];
 
@@ -153,7 +137,7 @@ export const EXPERIMENTS_DATA: Experiment[] = [
       title: 'Ứng dụng: Chuông lặn và Phao cứu sinh',
       scenario: 'Các thợ lặn thời xưa sử dụng "chuông lặn" - một chiếc chuông kim loại lớn úp ngược xuống biển giúp thợ lặn thở được dưới đáy biển sâu.',
       question: 'Dựa vào tính chất không khí chiếm chỗ, em hãy giải thích tại sao chiếc phao bơi khi được bơm căng khí lại có thể nâng người nổi trên mặt nước?',
-      answer: 'Không khí được bơm vào chiếm chỗ bên trong phao, làm thể tích phao tăng lên nhưng có khối lượng rất nhẹ, tạo ra lực đẩy Ac-si-met giúp phao và người nổi trên mặt nước.'
+      answer: 'Không khí được bơm vào chiếm chỗ bên trong phao làm phao phồng to nhưng vẫn rất nhẹ, nên phao nổi trên mặt nước và giúp người nổi theo.'
     }
   },
   {
@@ -171,14 +155,14 @@ export const EXPERIMENTS_DATA: Experiment[] = [
     backgroundKnowledge: 'Nam châm có hai cực: cực Bắc (N) và cực Nam (S). Nam châm có khả năng hút các vật làm từ vật liệu sắt từ như sắt, thép, niken, coban.',
     equipment: [
       'Nam châm chữ U với 2 cực Bắc (N - màu đỏ) và Nam (S - màu xanh)',
-      'Đinh sắt (Iron nail)',
-      'Kẹp giấy bằng thép (Steel paperclip)',
-      'Đồng xu bằng nhôm (Aluminum coin)',
-      'Đồng xu mạ niken (Nickel-plated coin)',
-      'Miếng gỗ nhỏ (Wood block)',
-      'Thước kẻ nhựa (Plastic ruler)',
-      'Tờ giấy tập (Paper slip)',
-      'Thìa inox chứa sắt từ (Stainless steel spoon)'
+      'Đinh sắt',
+      'Kẹp giấy bằng thép',
+      'Đồng xu bằng nhôm',
+      'Đồng xu bằng thép mạ niken',
+      'Miếng gỗ nhỏ',
+      'Thước kẻ nhựa',
+      'Tờ giấy tập',
+      'Thìa inox (loại inox bị nam châm hút)'
     ],
     procedureSteps: [
       'Đặt các vật mẫu trên bàn thí nghiệm.',
@@ -212,13 +196,13 @@ export const EXPERIMENTS_DATA: Experiment[] = [
         id: 'q1',
         question: 'Trong các vật mẫu, những vật nào bị nam châm hút?',
         options: [
-          'Đinh sắt, kẹp giấy thép, đồng xu mạ niken, thìa inox.',
+          'Đinh sắt, kẹp giấy thép, đồng xu thép mạ niken, thìa inox mẫu.',
           'Miếng gỗ, thước kẻ nhựa, tờ giấy.',
           'Đồng xu nhôm, miếng gỗ, thước nhựa.',
           'Tất cả các vật đều bị hút như nhau.'
         ],
         correctIndex: 0,
-        explanation: 'Đinh sắt, kẹp giấy thép, niken và thép inox có từ tính nên bị nam châm hút mạnh mẽ.'
+        explanation: 'Đinh sắt, kẹp giấy thép, đồng xu thép mạ niken và chiếc thìa inox mẫu đều bị nam châm hút. Lưu ý: có nhiều loại inox không bị nam châm hút, chiếc thìa trong mô phỏng là loại inox bị hút.'
       },
       {
         id: 'q2',
@@ -233,7 +217,7 @@ export const EXPERIMENTS_DATA: Experiment[] = [
         explanation: 'Chỉ các vật liệu có tính sắt từ (chứa sắt, thép, niken, coban) mới bị nam châm hút.'
       }
     ],
-    scientificConclusion: 'Nam châm có từ tính. Nam châm hút các vật làm bằng sắt, thép, niken và một số hợp kim có từ tính; không hút các vật bằng gỗ, nhựa, thủy tinh, giấy, nhôm.',
+    scientificConclusion: 'Nam châm hút các vật làm bằng sắt, thép, niken và một số hợp kim khác; không hút các vật bằng gỗ, nhựa, thủy tinh, giấy, nhôm, đồng. Không phải kim loại nào cũng bị nam châm hút, kể cả inox: có loại bị hút, có loại không.',
     realWorldApplication: {
       title: 'Ứng dụng: Cần cẩu điện từ tại bãi phế liệu',
       scenario: 'Tại các bãi tập kết phế liệu, công nhân dùng cần cẩu có gắn nam châm điện cực lớn để phân loại kim loại.',
@@ -250,8 +234,8 @@ export const EXPERIMENTS_DATA: Experiment[] = [
     durationMinutes: 20,
     difficulty: 'Trung bình',
     thumbnailUrl: './images/exp_water_cycle_1791767495614.jpg',
-    description: 'Điều chỉnh nhiệt độ nguồn nhiệt đun sôi nước tạo thành hơi nước, sau đó làm lạnh bề mặt để quan sát các giọt nước ngưng tụ tí tách.',
-    objective: 'Hiểu được nước chuyển từ thể lỏng sang thể khí (bay hơi) khi gặp nhiệt độ cao và chuyển từ thể khí sang thể lỏng (ngưng tụ) khi gặp lạnh.',
+    description: 'Điều chỉnh nguồn nhiệt để nước bay hơi nhanh hay chậm, điều chỉnh mức làm lạnh của đĩa để quan sát các giọt nước ngưng tụ.',
+    objective: 'Hiểu được nước chuyển từ thể lỏng sang thể khí (bay hơi) ở mọi nhiệt độ, nóng hơn thì bay hơi nhanh hơn; hơi nước gặp lạnh chuyển thành thể lỏng (ngưng tụ).',
     inquiryQuestion: 'Khi nước trong cốc cạn dần ngoài trời nắng, nước đã biến đi đâu? Làm thế nào để thu lại được những giọt nước từ hơi nước?',
     backgroundKnowledge: 'Nước tồn tại ở ba thể: thể lỏng, thể khí (hơi nước) và thể rắn (băng/đá). Quá trình nước chuyển từ thể lỏng sang thể khí gọi là bay hơi; ngược lại, từ thể khí sang thể lỏng gọi là ngưng tụ.',
     equipment: [
@@ -262,9 +246,9 @@ export const EXPERIMENTS_DATA: Experiment[] = [
       'Cốc hứng nước ngưng tụ'
     ],
     procedureSteps: [
-      'Bật nguồn nhiệt để đun nước trong bình lên trên 70°C - 100°C.',
-      'Quan sát hiện tượng nước sôi và các dòng hơi nước bốc lên cao.',
-      'Đặt đĩa lạnh chứa đá viên bên trên luồng hơi nước bay lên.',
+      'Quan sát bình nước khi chưa đun: nước vẫn bay hơi nhưng rất chậm.',
+      'Tăng mức nguồn nhiệt và quan sát hơi nước bốc lên nhiều hơn, mực nước trong bình giảm dần.',
+      'Điều chỉnh mức làm lạnh của đĩa đặt phía trên luồng hơi nước.',
       'Quan sát mặt dưới của đĩa lạnh: các hạt sương nước tí hon tụ lại thành giọt nước lớn rơi vào cốc hứng.'
     ],
     safetyWarning: 'CẢNH BÁO AN TOÀN: Đây là mô phỏng an toàn trên máy tính. Trong thực tế, nước sôi và hơi nước rất nóng có thể gây bỏng nghiêm trọng, học sinh KHÔNG ĐƯỢC tự ý đun nước sôi tại nhà mà không có người lớn giám sát.',
@@ -493,7 +477,7 @@ export const EXPERIMENTS_DATA: Experiment[] = [
     durationMinutes: 15,
     difficulty: 'Dễ',
     thumbnailUrl: './images/hero_smart_science_lab_1791767458426.jpg',
-    description: 'Gõ lên mặt trống rải hạt gạo hoặc gảy dây đàn ghita để quan sát sự dao động cơ học sinh ra âm thanh và lắng nghe cao độ.',
+    description: 'Gõ lên mặt trống có rải hạt gạo hoặc gảy dây đàn ghi-ta để quan sát sự rung động sinh ra âm thanh.',
     objective: 'Nhận biết được âm thanh được phát ra khi các vật rung động; độ mạnh yếu của dao động quyết định độ to nhỏ của âm thanh.',
     inquiryQuestion: 'Khi một vật phát ra âm thanh, bản thân vật đó có đang đứng yên bất động không? Làm sao để nhìn thấy được sự rung động đó?',
     backgroundKnowledge: 'Mọi âm thanh phát ra đều do các vật dao động (rung động). Khi ta gõ trống, mặt trống rung lên làm rung các hạt gạo bên trên và truyền dao động qua không khí tới màng nhĩ của tai.',
@@ -501,15 +485,15 @@ export const EXPERIMENTS_DATA: Experiment[] = [
       'Mặt trống da căng phẳng',
       'Một nhúm hạt gạo nhỏ rải trên mặt trống',
       'Dùi gõ trống có điều chỉnh lực đập',
-      'Dây đàn ghita căng với chốt căng dây',
-      'Máy hiện sóng âm thanh mô phỏng (Oscilloscope)'
+      'Dây đàn ghi-ta căng với chốt căng dây',
+      'Màn hình hiện sóng âm thanh mô phỏng'
     ],
     procedureSteps: [
       'Rải đều một số hạt gạo lên trên mặt trống đang đứng yên.',
       'Dùng dùi gõ nhẹ vào mặt trống: quan sát hạt gạo nảy nhẹ và lắng nghe tiếng trống trầm nhẹ.',
       'Dùng dùi gõ mạnh hơn vào mặt trống: quan sát hạt gạo nhảy cao hơn và âm thanh to hơn.',
       'Dùng bàn tay chạm nhẹ và giữ chặt mặt trống khi đang kêu: quan sát âm thanh tắt ngay lập tức.',
-      'Chuyển sang gảy dây đàn ghita và quan sát bóng mờ của dây đàn đang rung qua lại.'
+      'Chuyển sang gảy dây đàn ghi-ta và quan sát bóng mờ của dây đàn đang rung qua lại.'
     ],
     safetyWarning: 'Không gõ dùi quá sát tai bạn để bảo vệ thính giác.',
     predictionOptions: [
@@ -575,24 +559,24 @@ export const EXPERIMENTS_DATA: Experiment[] = [
     durationMinutes: 20,
     difficulty: 'Trung bình',
     thumbnailUrl: './images/hero_smart_science_lab_1791767458426.jpg',
-    description: 'Thực nghiệm so sánh 4 chậu cây đậu tương ứng với 4 điều kiện: đủ yếu tố, thiếu nước, thiếu ánh sáng và thiếu không khí theo thời gian 10 ngày.',
+    description: 'Mô phỏng so sánh 4 chậu cây đậu với 4 điều kiện: đủ điều kiện, thiếu nước, thiếu ánh sáng và thiếu không khí trong 10 ngày.',
     objective: 'Nêu được các yếu tố cần thiết cho sự sống và phát triển của thực vật: nước, ánh sáng, không khí, chất khoáng và nhiệt độ thích hợp.',
     inquiryQuestion: 'Nếu một cây có đầy đủ ánh sáng và không khí nhưng bị bỏ quên không tưới nước trong 10 ngày, điều gì sẽ xảy ra với cây?',
     backgroundKnowledge: 'Thực vật là sinh vật sống tự dưỡng. Để quang hợp, hô hấp và sinh trưởng, cây xanh cần có ánh sáng mặt trời, nước, chất khoáng từ đất, không khí (khí cacbônic và ôxi) và nhiệt độ thích hợp.',
     equipment: [
-      'Chậu 1 (Đối chứng): Đủ nước, đặt nơi có đủ ánh sáng mặt trời và không khí thoáng đãng',
-      'Chậu 2: Đủ ánh sáng và không khí nhưng KHÔNG TƯỚI NƯỚC',
-      'Chậu 3: Đủ nước và không khí nhưng ĐẶT TRONG HỘP KÍN TỐI (Thiếu ánh sáng)',
-      'Chậu 4: Đủ nước và ánh sáng nhưng BỌC KÍN TÚI NILON TRONG SUỐT (Thiếu không khí trao đổi)',
+      'Chậu A (đối chứng): Đủ nước, đặt nơi có đủ ánh sáng mặt trời và không khí thoáng đãng',
+      'Chậu B: Đủ ánh sáng và không khí nhưng KHÔNG TƯỚI NƯỚC',
+      'Chậu C: Đủ nước và không khí nhưng ĐẶT TRONG HỘP KÍN TỐI (Thiếu ánh sáng)',
+      'Chậu D: Đủ nước và ánh sáng nhưng BỌC KÍN TÚI NILON TRONG SUỐT (Thiếu không khí trao đổi)',
       'Thanh trượt thời gian mô phỏng từ Ngày 1 đến Ngày 10'
     ],
     procedureSteps: [
-      'Quan sát trạng thái ban đầu của 4 chậu cây xanh tốt vào Ngày 1.',
+      'Quan sát 4 chậu cây vào Ngày 1.',
       'Kéo thanh trượt thời gian sang Ngày 3, Ngày 6 và Ngày 10.',
       'Quan sát sự thay đổi màu sắc lá, chiều cao thân và độ tươi tốt của từng chậu cây.',
       'Ghi nhận kết quả vào bảng so sánh điều kiện sinh trưởng.'
     ],
-    safetyWarning: 'Lưu ý khoa học: Đây là mô hình mô phỏng quy luật chung của thực vật. Trong thực tế, các loài thực vật sa mạc như xương rồng có khả năng chịu hạn tốt hơn các cây thân thảo.',
+    safetyWarning: 'Đây là mô phỏng đơn giản, kết quả thực tế có thể khác. Ví dụ, cây xương rồng chịu hạn tốt hơn nhiều so với cây đậu.',
     predictionOptions: [
       {
         id: 'pred_1',
@@ -610,13 +594,13 @@ export const EXPERIMENTS_DATA: Experiment[] = [
         id: 'pred_3',
         text: 'Chậu cây bọc túi kín sẽ lớn nhanh nhất vì được giữ ấm tuyệt đối.',
         isCorrect: false,
-        explanation: 'Bọc kín làm thiếu không khí trao đổi khí carbonic và oxy khiến cây ngừng hô hấp và thối rữa.'
+        explanation: 'Bọc kín làm cây thiếu không khí trao đổi nên cây lớn chậm và kém tươi.'
       }
     ],
     postQuestions: [
       {
         id: 'q1',
-        question: 'Ở Chậu 2 (không được tưới nước), cây có hiện tượng gì sau 10 ngày?',
+        question: 'Ở chậu B (không được tưới nước), cây có hiện tượng gì sau 10 ngày?',
         options: [
           'Cây vẫn tươi xanh như bình thường.',
           'Lá cây héo rũ, khô quắt, thân gục xuống và cây chết dần vì thiếu nước.',
@@ -628,7 +612,7 @@ export const EXPERIMENTS_DATA: Experiment[] = [
       },
       {
         id: 'q2',
-        question: 'Ở Chậu 3 (trong hộp tối thiếu ánh sáng), lá cây có màu gì khác biệt?',
+        question: 'Ở chậu C (trong hộp tối, thiếu ánh sáng), lá cây có màu gì khác biệt?',
         options: [
           'Lá có màu xanh mướt tuyệt đẹp.',
           'Lá bị nhạt màu chuyển sang màu vàng úa, thân cây vống dài khẳng khiu.',
@@ -646,33 +630,6 @@ export const EXPERIMENTS_DATA: Experiment[] = [
       question: 'Em hãy nêu những việc cần làm ngay để cứu sống và chăm sóc bồn hoa phát triển xanh tốt trở lại?',
       answer: 'Cần nhặt bỏ lá khô úa, xới nhẹ lớp đất xốp, tưới nước vừa đủ cho cây thấm đều và di chuyển chậu cây ra vị trí có ánh nắng buổi sáng chan hòa.'
     }
-  }
-];
-
-export const INITIAL_NOTEBOOKS: NotebookEntry[] = [
-  {
-    id: 'nb_1',
-    experimentId: 'khong-khi-chiem-cho',
-    experimentTitle: 'Không khí có chiếm chỗ không?',
-    date: '10/10/2026',
-    hypothesis: 'Em dự đoán nước sẽ không vào được trong cốc vì có không khí bên trong.',
-    operations: 'Úp ngược cốc thủy tinh có mẩu giấy bên trong xuống chậu nước rồi nghiêng nhẹ cốc.',
-    observation: 'Khi nhúng thẳng đứng, mẩu giấy vẫn khô ráo. Khi nghiêng cốc, có các bọt khí tròn nổi lên và nước ùa vào trong cốc.',
-    conclusion: 'Không khí chiếm chỗ trong không gian và có ở khắp mọi nơi.',
-    studentNotes: 'Thí nghiệm rất thú vị! Em đã thử giải thích cho em gái ở nhà nghe về chuông lặn.',
-    questionsExplored: 'Nếu đổ đầy cát vào cốc thì không khí có còn ở trong cốc nữa không?'
-  },
-  {
-    id: 'nb_2',
-    experimentId: 'nam-cham-hut-vat-nao',
-    experimentTitle: 'Nam châm hút những vật nào?',
-    date: '08/10/2026',
-    hypothesis: 'Nam châm hút tất cả các kim loại.',
-    operations: 'Đưa nam châm chữ U lại gần đinh sắt, kẹp giấy, đồng xu nhôm, thước nhựa.',
-    observation: 'Nam châm hút đinh sắt và kẹp giấy rất mạnh, nhưng đồng xu nhôm và thước nhựa thì không bị hút.',
-    conclusion: 'Nam châm chỉ hút các vật làm bằng sắt, thép hoặc niken, không hút được nhôm và nhựa.',
-    studentNotes: 'Em đã biết rằng đồng xu bằng nhôm không có từ tính.',
-    questionsExplored: 'Tại sao cửa tủ lạnh nhà em lại đóng chặt được?'
   }
 ];
 
@@ -763,116 +720,6 @@ export const INITIAL_QUIZZES: Quiz[] = [
   }
 ];
 
-export const INITIAL_CLASSROOMS: Classroom[] = [
-  {
-    id: 'class_4a1',
-    name: 'Lớp 4A1 - Khoa Học Diệu Kỳ',
-    code: 'KH4-A1-88',
-    school: 'Trường Tiểu học Nguyễn Du',
-    grade: 'Lớp 4',
-    teacherName: 'Cô Lê Thị Mai Hương',
-    studentCount: 32,
-    students: [
-      { id: 'st_1', name: 'Trần Minh Khang', avatar: '👦', points: 340, completedExperiments: 6, lastActive: '10 phút trước', averageScore: 95 },
-      { id: 'st_2', name: 'Nguyễn Ngọc Linh', avatar: '👧', points: 410, completedExperiments: 7, lastActive: '1 giờ trước', averageScore: 98 },
-      { id: 'st_3', name: 'Vũ Hoàng Nam', avatar: '👦', points: 280, completedExperiments: 5, lastActive: 'Hôm qua', averageScore: 88 },
-      { id: 'st_4', name: 'Phạm Bảo Châu', avatar: '👧', points: 310, completedExperiments: 5, lastActive: 'Hôm nay', averageScore: 90 },
-      { id: 'st_5', name: 'Lê Gia Hưng', avatar: '👦', points: 190, completedExperiments: 3, lastActive: '2 ngày trước', averageScore: 82 }
-    ]
-  },
-  {
-    id: 'class_4a2',
-    name: 'Lớp 4A2 - Nhà Sáng Chế Nhí',
-    code: 'KH4-A2-99',
-    school: 'Trường Tiểu học Nguyễn Du',
-    grade: 'Lớp 4',
-    teacherName: 'Thầy Phạm Quang Huy',
-    studentCount: 30,
-    students: [
-      { id: 'st_6', name: 'Đặng Tuấn Kiệt', avatar: '👦', points: 290, completedExperiments: 4, lastActive: '30 phút trước', averageScore: 86 },
-      { id: 'st_7', name: 'Hoàng Thùy Chi', avatar: '👧', points: 370, completedExperiments: 6, lastActive: 'Hôm nay', averageScore: 94 }
-    ]
-  }
-];
-
-export const INITIAL_ASSIGNMENTS: Assignment[] = [
-  {
-    id: 'asg_1',
-    classId: 'class_4a1',
-    title: 'Nhiệm vụ tuần 6: Thí nghiệm Không khí chiếm chỗ',
-    experimentId: 'khong-khi-chiem-cho',
-    experimentTitle: 'Không khí có chiếm chỗ không?',
-    assignedDate: '09/10/2026',
-    dueDate: '16/10/2026',
-    targetType: 'individual',
-    targetName: 'Toàn bộ học sinh',
-    status: 'active',
-    submissionsCount: 28,
-    totalStudents: 32
-  },
-  {
-    id: 'asg_2',
-    classId: 'class_4a1',
-    title: 'Dự án nhóm: Khám phá mạch điện thắp sáng',
-    experimentId: 'mach-dien-don-gian',
-    experimentTitle: 'Mạch điện đơn giản',
-    assignedDate: '10/10/2026',
-    dueDate: '20/10/2026',
-    targetType: 'group',
-    targetName: '4 nhóm học tập',
-    status: 'active',
-    submissionsCount: 18,
-    totalStudents: 32
-  }
-];
-
-export const INITIAL_RESOURCES: LearningResource[] = [
-  {
-    id: 'res_1',
-    title: 'Phiếu học tập: Thí nghiệm Không khí và Nước (Bài 3 SGK)',
-    description: 'Phiếu quan sát, vẽ sơ đồ cốc úp và ghi nhận hiện tượng bọt khí dành cho học sinh làm việc nhóm.',
-    topicId: 'khong-khi-nuoc',
-    fileType: 'pdf',
-    audience: 'public',
-    size: '1.4 MB',
-    uploadedBy: 'Cô Lê Thị Mai Hương',
-    uploadedAt: '05/10/2026'
-  },
-  {
-    id: 'res_2',
-    title: 'Kế hoạch bài dạy (Giáo án PowerPoint): Ánh sáng và Bóng tối',
-    description: 'Slide trình chiếu đầy đủ các hoạt động khởi động, hình thành kiến thức và trò chơi múa rối bóng.',
-    topicId: 'anh-sang-am-thanh',
-    fileType: 'pptx',
-    audience: 'teacher_only',
-    size: '8.6 MB',
-    uploadedBy: 'Thầy Phạm Quang Huy',
-    uploadedAt: '03/10/2026'
-  },
-  {
-    id: 'res_3',
-    title: 'Bảng theo dõi sinh trưởng thực vật 10 ngày',
-    description: 'Biểu mẫu theo dõi mầm đậu dành cho học sinh ghi chép số lá, chiều cao và độ ẩm đất.',
-    topicId: 'thuc-vat-dong-vat',
-    fileType: 'docx',
-    audience: 'public',
-    size: '420 KB',
-    uploadedBy: 'Cô Lê Thị Mai Hương',
-    uploadedAt: '01/10/2026'
-  },
-  {
-    id: 'res_4',
-    title: 'Tranh minh họa cấu tạo nam châm và từ phổ',
-    description: 'Hình ảnh sắc nét về đường sức từ của nam châm chữ U và nam châm thanh.',
-    topicId: 'nang-luong',
-    fileType: 'image',
-    audience: 'public',
-    size: '2.1 MB',
-    uploadedBy: 'Ban Biên Tập Khoa Học',
-    uploadedAt: '28/09/2026'
-  }
-];
-
 export const INITIAL_VIDEOS: ScienceVideo[] = [
   {
     id: 'vid_1',
@@ -880,13 +727,11 @@ export const INITIAL_VIDEOS: ScienceVideo[] = [
     thumbnailUrl: './images/exp_air_pressure_1791767471782.jpg',
     topicId: 'khong-khi-nuoc',
     description: 'Video phóng sự thí nghiệm vui về áp suất và tính chiếm chỗ của không khí trong đời sống.',
-    duration: '04:15',
     level: 'Lớp 4',
     preQuestion: 'Em hãy quan sát xem người dẫn chương trình làm thế nào để mẩu giấy luôn khô ráo?',
     postQuestion: 'Tại sao khi nghiêng chiếc cốc lại có tiếng lục bục và bong bóng nổi lên?',
     videoUrl: '',
-    viewCount: 1420,
-    isFavorite: true
+    isFavorite: false
   },
   {
     id: 'vid_2',
@@ -894,12 +739,10 @@ export const INITIAL_VIDEOS: ScienceVideo[] = [
     thumbnailUrl: './images/exp_water_cycle_1791767495614.jpg',
     topicId: 'khong-khi-nuoc',
     description: 'Hoạt hình giải thích sự bốc hơi từ biển cả, ngưng tụ thành mây và rơi xuống thành mưa ngọt.',
-    duration: '05:30',
     level: 'Lớp 4',
     preQuestion: 'Nước mưa trên trời rơi xuống có nguồn gốc từ đâu bay lên?',
     postQuestion: 'Hai quá trình vật lý nào diễn ra luân phiên trong chu trình của nước?',
     videoUrl: '',
-    viewCount: 2310,
     isFavorite: false
   },
   {
@@ -908,12 +751,14 @@ export const INITIAL_VIDEOS: ScienceVideo[] = [
     thumbnailUrl: './images/exp_magnet_materials_1791767483863.jpg',
     topicId: 'nang-luong',
     description: 'Quan sát các mạt sắt tạo thành những đường cong kỳ ảo xung quanh 2 cực của thanh nam châm.',
-    duration: '03:45',
     level: 'Lớp 4',
     preQuestion: 'Hai cực cùng tên của nam châm để gần nhau sẽ hút hay đẩy nhau?',
     postQuestion: 'Các vật bằng nhôm và đồng có bị nam châm hút không?',
     videoUrl: '',
-    viewCount: 1890,
-    isFavorite: true
+    isFavorite: false
   }
 ];
+
+// Đếm số thí nghiệm thật sự có trong mỗi chủ đề (không ghi số cố định)
+export const countExperimentsByTopic = (topicId: TopicId): number =>
+  EXPERIMENTS_DATA.filter((e) => e.topicId === topicId).length;
