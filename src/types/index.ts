@@ -142,10 +142,18 @@ export interface LearningResource {
   topicId: TopicId;
   fileType: ResourceFileType;
   audience: 'public' | 'teacher_only';
-  // Đường dẫn tới tài liệu (giáo viên dán link). Chưa có máy chủ lưu tệp.
+  // Đường dẫn ngoài (kind = 'link') — với tệp tải lên thì để trống và dùng storagePath
   url: string;
   uploadedAt: string;
   updatedAt?: string;
+  // Các trường chỉ có khi dữ liệu đến từ máy chủ
+  kind?: 'file' | 'link';
+  storagePath?: string | null;
+  ownerId?: string;
+  classId?: string | null;
+  hidden?: boolean;
+  sizeBytes?: number | null;
+  mimeType?: string | null;
 }
 
 export interface ScienceVideo {
@@ -161,6 +169,11 @@ export interface ScienceVideo {
   postQuestion: string;
   videoUrl: string;
   isFavorite?: boolean;
+  // Video do giáo viên thêm trên máy chủ
+  storagePath?: string | null;
+  ownerId?: string;
+  hidden?: boolean;
+  isRemote?: boolean;
 }
 
 export interface QuizAttempt {
@@ -172,6 +185,7 @@ export interface QuizAttempt {
   total: number;
   xpAwarded: number;
   wrongQuestionIds: string[];
+  answers?: Record<string, unknown>;
 }
 
 export interface ExperimentResult {
@@ -184,4 +198,19 @@ export interface ExperimentResult {
   correct: number;
   total: number;
   wrongQuestionIds: string[];
+  answers?: Record<string, number>;
+  actions?: string[];
+  observation?: string;
+}
+
+// Hồ sơ đăng nhập (bảng profiles trên Supabase)
+export type AccountStatus = 'pending' | 'active' | 'locked';
+export interface AuthProfile {
+  id: string;
+  role: UserRole;
+  status: AccountStatus;
+  display_name: string;
+  username: string | null;
+  email: string | null;
+  created_at?: string;
 }

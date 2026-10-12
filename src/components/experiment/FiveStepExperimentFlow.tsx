@@ -251,7 +251,10 @@ export const FiveStepExperimentFlow: React.FC<Props> = ({
       predictionCorrect: !!predObj?.isCorrect,
       correct: experiment.postQuestions.length - wrong.length,
       total: experiment.postQuestions.length,
-      wrongQuestionIds: wrong.map((q) => `${experiment.id}:${q.id}`)
+      wrongQuestionIds: wrong.map((q) => `${experiment.id}:${q.id}`),
+      answers: { ...postAnswers },
+      actions: [...simulationLog],
+      observation: observationText.trim() || undefined
     });
   };
 

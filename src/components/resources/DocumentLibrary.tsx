@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { LearningResource, ResourceFileType, TopicId } from '../../types';
 import { SCIENCE_TOPICS } from '../../data/scienceData';
-import { newId } from '../../utils/storage';
+import { RESOURCE_ACCEPT, validateFile, formatBytes, signedUrl, ResourceInput } from '../../lib/api';
+import { friendlyError } from '../../lib/supabase';
+import { LoadingState, ErrorState, Spinner } from '../ui/States';
+import { useToast } from '../ui/Toast';
 import {
   FileText,
   Download,
@@ -20,10 +23,17 @@ import {
 interface Props {
   resources: LearningResource[];
   bookmarks: string[];
+  // Giáo viên đã được duyệt: được thêm tài liệu
   isTeacher: boolean;
-  onAddResource: (resource: LearningResource) => void;
-  onUpdateResource: (id: string, updated: Partial<LearningResource>) => void;
-  onDeleteResource: (id: string) => void;
+  // Được sửa/xóa tài liệu này không (chủ sở hữu hoặc quản trị viên)
+  canEdit: (res: LearningResource) => boolean;
+  loading?: boolean;
+  error?: string | null;
+  onRetry?: () => void;
+  // Ghi chú về nơi lưu dữ liệu (khách / ngoại tuyến / trực tuyến)
+  notice?: React.ReactNode;
+  onSave: (input: ResourceInput, file: File | null, existing?: LearningResource) => Promise<void>;
+  onDelete: (res: LearningResource) => Promise<void>;
   onToggleBookmark: (id: string) => void;
 }
 
@@ -65,11 +75,22 @@ export const DocumentLibrary: React.FC<Props> = ({
   resources,
   bookmarks,
   isTeacher,
-  onAddResource,
-  onUpdateResource,
-  onDeleteResource,
+  canEdit,
+  loading,
+  error,
+  onRetry,
+  notice,
+  onSave,
+  onDelete,
   onToggleBookmark
 }) => {
+  const toast = useToast();
+  const [source, setSource] = useState<'file' | 'link'>('file');
+  const [file, setFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<LearningResource | null>(null);
+
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [fileTypeFilter, setFileTypeFilter] = useState<string>('all');
   const [topicFilter, setTopicFilter] = useState<string>('all');
@@ -78,6 +99,16 @@ export const DocumentLibrary: React.FC<Props> = ({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState<string>('');
+
+  // Esc đóng hộp thoại (trừ khi đang lưu)
+  useEffect(() => {
+    if (!showForm) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !saving) setShowForm(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [showForm, saving]);
 
   const visibleResources = resources.filter((res) => isTeacher || res.audience !== 'teacher_only');
 
@@ -93,6 +124,9 @@ export const DocumentLibrary: React.FC<Props> = ({
 
   const openAdd = () => {
     setEditingId(null);
+    setEditing(null);
+    setSource('file');
+    setFile(null);
     setForm(emptyForm);
     setFormError('');
     setShowForm(true);
@@ -100,6 +134,9 @@ export const DocumentLibrary: React.FC<Props> = ({
 
   const openEdit = (res: LearningResource) => {
     setEditingId(res.id);
+    setEditing(res);
+    setSource(res.kind === 'file' ? 'file' : 'link');
+    setFile(null);
     setForm({
       title: res.title,
       description: res.description,
@@ -112,37 +149,82 @@ export const DocumentLibrary: React.FC<Props> = ({
     setShowForm(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) {
       setFormError('Thầy cô hãy nhập tên tài liệu.');
       return;
     }
-    if (!isValidUrl(form.url)) {
+    if (source === 'file') {
+      if (!file && !(editing && editing.kind === 'file')) {
+        setFormError('Thầy cô hãy chọn tệp cần tải lên.');
+        return;
+      }
+      if (file) {
+        const err = validateFile(file, 'resource');
+        if (err) {
+          setFormError(err);
+          return;
+        }
+      }
+    } else if (!isValidUrl(form.url)) {
       setFormError('Đường dẫn chưa hợp lệ. Hãy dán link bắt đầu bằng https://');
       return;
     }
-    const today = new Date().toLocaleDateString('vi-VN');
-    const data = {
-      title: form.title.trim(),
-      description: form.description.trim(),
-      topicId: form.topicId,
-      fileType: form.fileType,
-      audience: form.audience,
-      url: form.url.trim()
-    };
-    if (editingId) {
-      onUpdateResource(editingId, { ...data, updatedAt: today });
-    } else {
-      onAddResource({ id: newId('res'), ...data, uploadedAt: today });
+    setFormError('');
+    setSaving(true);
+    try {
+      await onSave(
+        {
+          title: form.title.trim(),
+          description: form.description.trim(),
+          topicId: form.topicId,
+          fileType: source === 'link' ? (form.fileType === 'link' || !editing || editing.kind === 'file' ? 'link' : form.fileType) : form.fileType,
+          audience: form.audience,
+          url: source === 'link' ? form.url.trim() : ''
+        },
+        source === 'file' ? file : null,
+        editing || undefined
+      );
+      toast.success(editingId ? 'Đã lưu thay đổi tài liệu.' : 'Đã thêm tài liệu.');
+      setShowForm(false);
+      setEditingId(null);
+      setEditing(null);
+    } catch (err) {
+      setFormError(friendlyError(err));
+    } finally {
+      setSaving(false);
     }
-    setShowForm(false);
-    setEditingId(null);
   };
 
-  const handleDelete = (res: LearningResource) => {
-    if (window.confirm(`Xóa tài liệu "${res.title}"? Thao tác này không hoàn tác được.`)) {
-      onDeleteResource(res.id);
+  const handleDelete = async (res: LearningResource) => {
+    if (!window.confirm(`Xóa tài liệu "${res.title}"? Thao tác này không hoàn tác được.`)) return;
+    setBusyId(res.id);
+    try {
+      await onDelete(res);
+      toast.success('Đã xóa tài liệu.');
+    } catch (err) {
+      toast.error(friendlyError(err));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  // Tệp trong kho riêng tư: xin link có hạn rồi mở/tải
+  const openStored = async (res: LearningResource, download: boolean) => {
+    if (!res.storagePath) return;
+    const win = download ? null : window.open('', '_blank');
+    setBusyId(res.id);
+    try {
+      const url = await signedUrl(res.storagePath, download ? res.storagePath.split('/').pop() : undefined);
+      if (download) window.location.assign(url);
+      else if (win) win.location.href = url;
+      else window.open(url, '_blank', 'noopener');
+    } catch (err) {
+      win?.close();
+      toast.error(friendlyError(err));
+    } finally {
+      setBusyId(null);
     }
   };
 
@@ -188,22 +270,22 @@ export const DocumentLibrary: React.FC<Props> = ({
             className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-xs"
           >
             <Plus className="w-4 h-4" />
-            Thêm tài liệu (đường dẫn)
+            Thêm tài liệu
           </button>
         )}
       </div>
 
-      {/* Honest storage note */}
-      <div className="p-3 bg-sky-50 border border-sky-200 rounded-xl text-xs text-sky-900 flex items-start gap-2">
-        <Info className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
-        <span>
-          Hiện tài liệu được lưu dưới dạng đường dẫn và chỉ lưu trên thiết bị này. Tải tệp lên và chia sẻ cho cả lớp sẽ có khi kết nối máy chủ.
-        </span>
-      </div>
+      {notice && (
+        <div className="p-3 bg-sky-50 border border-sky-200 rounded-xl text-xs text-sky-900 flex items-start gap-2">
+          <Info className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+          <div className="min-w-0">{notice}</div>
+        </div>
+      )}
+      {error && <ErrorState text={error} onRetry={onRetry} />}
 
       {/* Filter and Search Bar */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-[220px] flex-1 sm:max-w-xs">
+        <div className="relative w-full sm:w-auto sm:min-w-[220px] flex-1 sm:max-w-xs">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
           <input
             type="text"
@@ -258,7 +340,9 @@ export const DocumentLibrary: React.FC<Props> = ({
       </div>
 
       {/* Resources Grid / Empty state */}
-      {filteredResources.length === 0 ? (
+      {loading ? (
+        <LoadingState text="Đang tải tài liệu..." />
+      ) : filteredResources.length === 0 ? (
         <div className="p-10 text-center bg-white rounded-2xl border border-slate-200 space-y-2">
           <FileText className="w-10 h-10 text-slate-300 mx-auto" />
           <h3 className="text-sm font-bold text-slate-800">
@@ -267,7 +351,7 @@ export const DocumentLibrary: React.FC<Props> = ({
           <p className="text-xs text-slate-500">
             {visibleResources.length === 0
               ? isTeacher
-                ? 'Thầy cô bấm "Thêm tài liệu (đường dẫn)" để chia sẻ phiếu học tập, bài giảng...'
+                ? 'Thầy cô bấm "Thêm tài liệu" để tải lên phiếu học tập, bài giảng hoặc dán đường dẫn.'
                 : 'Khi thầy cô chia sẻ tài liệu, tài liệu sẽ hiện ở đây.'
               : 'Em thử đổi từ khóa hoặc bộ lọc nhé.'}
           </p>
@@ -320,35 +404,59 @@ export const DocumentLibrary: React.FC<Props> = ({
                       {res.description}
                     </p>
                   )}
+                  {res.hidden && (
+                    <p className="text-[11px] font-semibold text-rose-700 mt-1">Đã bị quản trị viên ẩn</p>
+                  )}
                   <p className="text-[11px] text-slate-400 mt-2">
-                    Ngày thêm: {res.uploadedAt}
+                    {res.sizeBytes ? `${formatBytes(res.sizeBytes)} · ` : ''}Ngày thêm: {res.uploadedAt}
                     {res.updatedAt ? ` · Sửa lần cuối: ${res.updatedAt}` : ''}
                   </p>
                 </div>
 
                 <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <a
-                      href={res.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors flex items-center gap-1"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" /> Mở tài liệu
-                    </a>
-                    {res.fileType !== 'link' && (
-                      <a
-                        href={toDownloadUrl(res.url)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        download
-                        className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1"
-                      >
-                        <Download className="w-3.5 h-3.5" /> Tải về
-                      </a>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {res.storagePath ? (
+                      <>
+                        <button
+                          onClick={() => openStored(res, false)}
+                          disabled={busyId === res.id}
+                          className="px-3 py-2 min-h-[40px] text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors flex items-center gap-1"
+                        >
+                          {busyId === res.id ? <Spinner className="w-3.5 h-3.5" /> : <ExternalLink className="w-3.5 h-3.5" />} Mở tài liệu
+                        </button>
+                        <button
+                          onClick={() => openStored(res, true)}
+                          disabled={busyId === res.id}
+                          className="px-3 py-2 min-h-[40px] text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1"
+                        >
+                          <Download className="w-3.5 h-3.5" /> Tải về
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <a
+                          href={res.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-2 min-h-[40px] text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors flex items-center gap-1"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" /> Mở tài liệu
+                        </a>
+                        {res.fileType !== 'link' && (
+                          <a
+                            href={toDownloadUrl(res.url)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download
+                            className="px-3 py-2 min-h-[40px] text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1"
+                          >
+                            <Download className="w-3.5 h-3.5" /> Tải về
+                          </a>
+                        )}
+                      </>
                     )}
                   </div>
-                  {isTeacher && (
+                  {canEdit(res) && (
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => openEdit(res)}
@@ -358,6 +466,7 @@ export const DocumentLibrary: React.FC<Props> = ({
                       </button>
                       <button
                         onClick={() => handleDelete(res)}
+                        disabled={busyId === res.id}
                         className="px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg flex items-center gap-1"
                       >
                         <Trash2 className="w-3.5 h-3.5" /> Xóa
@@ -396,22 +505,57 @@ export const DocumentLibrary: React.FC<Props> = ({
                   className="w-full p-2.5 border border-slate-300 rounded-xl focus:border-indigo-500 focus:outline-none"
                 />
               </div>
-              <div>
-                <label htmlFor="res-url" className="font-semibold text-slate-700 block mb-1">Đường dẫn tài liệu (URL):</label>
-                <input
-                  id="res-url"
-                  type="url"
-                  required
-                  value={form.url}
-                  onChange={(e) => setForm({ ...form, url: e.target.value })}
-                  placeholder="https://drive.google.com/... hoặc link khác"
-                  className="w-full p-2.5 border border-slate-300 rounded-xl focus:border-indigo-500 focus:outline-none"
-                />
-              </div>
-              <div className="p-2.5 rounded-xl border border-dashed border-slate-300 bg-slate-50 text-slate-500 flex items-center gap-2">
-                <Upload className="w-4 h-4 shrink-0" />
-                <span>Tải tệp lên sẽ có khi kết nối máy chủ. Hiện thầy cô hãy dán đường dẫn tới tệp.</span>
-              </div>
+              <fieldset>
+                <legend className="font-semibold text-slate-700 block mb-1">Nguồn tài liệu:</legend>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['file', 'link'] as const).map((k) => (
+                    <label
+                      key={k}
+                      className={`min-h-[44px] flex items-center justify-center gap-2 rounded-xl border cursor-pointer font-semibold ${
+                        source === k ? 'border-indigo-500 bg-indigo-50 text-indigo-800' : 'border-slate-300 text-slate-600'
+                      }`}
+                    >
+                      <input type="radio" name="res-source" value={k} checked={source === k} onChange={() => setSource(k)} className="sr-only" />
+                      {k === 'file' ? <Upload className="w-4 h-4" /> : <ExternalLink className="w-4 h-4" />}
+                      {k === 'file' ? 'Tải tệp lên' : 'Dán đường dẫn'}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              {source === 'file' ? (
+                <div>
+                  <label htmlFor="res-file" className="font-semibold text-slate-700 block mb-1">
+                    {editing?.kind === 'file' ? 'Thay tệp (để trống nếu giữ tệp cũ):' : 'Chọn tệp:'}
+                  </label>
+                  <input
+                    id="res-file"
+                    type="file"
+                    accept={RESOURCE_ACCEPT}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] || null;
+                      setFile(f);
+                      setFormError(f ? validateFile(f, 'resource') || '' : '');
+                    }}
+                    className="w-full min-w-0 text-xs file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:font-semibold"
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    PDF, Word (.docx), PowerPoint (.pptx) hoặc ảnh; tối đa 50 MB. Tệp được lưu riêng tư, chỉ người có quyền mới mở được.
+                    {file ? ` Đã chọn: ${file.name} (${formatBytes(file.size)}).` : ''}
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <label htmlFor="res-url" className="font-semibold text-slate-700 block mb-1">Đường dẫn tài liệu (URL):</label>
+                  <input
+                    id="res-url"
+                    type="url"
+                    value={form.url}
+                    onChange={(e) => setForm({ ...form, url: e.target.value })}
+                    placeholder="https://drive.google.com/... hoặc link khác"
+                    className="w-full p-2.5 border border-slate-300 rounded-xl focus:border-indigo-500 focus:outline-none"
+                  />
+                </div>
+              )}
               <div>
                 <label htmlFor="res-desc" className="font-semibold text-slate-700 block mb-1">Mô tả ngắn gọn:</label>
                 <textarea
@@ -438,8 +582,8 @@ export const DocumentLibrary: React.FC<Props> = ({
                   ))}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className={source === 'file' ? 'hidden' : ''}>
                   <label htmlFor="res-type" className="font-semibold text-slate-700 block mb-1">Loại tài liệu:</label>
                   <select
                     id="res-type"
@@ -480,15 +624,18 @@ export const DocumentLibrary: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl"
+                  disabled={saving}
+                  className="px-4 py-2 min-h-[44px] text-slate-600 hover:bg-slate-100 rounded-xl"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-2xs"
+                  disabled={saving}
+                  className="px-4 py-2 min-h-[44px] font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 rounded-xl transition-colors shadow-2xs inline-flex items-center gap-1.5"
                 >
-                  {editingId ? 'Lưu thay đổi' : 'Lưu tài liệu'}
+                  {saving && <Spinner />}
+                  {saving ? 'Đang lưu...' : editingId ? 'Lưu thay đổi' : 'Lưu tài liệu'}
                 </button>
               </div>
             </form>

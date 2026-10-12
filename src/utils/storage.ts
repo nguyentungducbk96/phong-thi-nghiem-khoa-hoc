@@ -1,15 +1,20 @@
-// Lớp truy cập dữ liệu duy nhất của ứng dụng.
-// Hiện tại dữ liệu chỉ lưu trong localStorage của thiết bị đang dùng.
-// Giai đoạn sau sẽ thay phần thân các hàm load/save bằng Supabase
-// mà không phải sửa các component.
+// Lớp truy cập dữ liệu duy nhất của ứng dụng — ĐIỂM CHUYỂN DUY NHẤT giữa
+//   • local  : khách / chế độ ngoại tuyến → localStorage của thiết bị (khóa ssl_v2_*)
+//   • remote : học sinh đã đăng nhập → Supabase (xem ./remoteStore.ts)
+// Component chỉ dùng getStudentStore(); không gọi localStorage hay Supabase trực tiếp
+// cho dữ liệu học tập cá nhân.
 
 import {
   NotebookEntry,
   LearningResource,
   ScienceVideo,
   Classroom,
-  Assignment
+  Assignment,
+  QuizAttempt,
+  ExperimentResult
 } from '../types';
+import { createRemoteStore } from './remoteStore';
+import { isSupabaseConfigured } from '../lib/supabase';
 
 // Tăng phiên bản khi cần bỏ dữ liệu cũ không còn hợp lệ.
 // v1 (khóa "ssl_*") chứa dữ liệu mẫu giả: điểm 180 XP, thí nghiệm đã hoàn thành sẵn,
@@ -27,7 +32,9 @@ export const STORAGE_KEYS = {
   classrooms: 'classrooms',
   assignments: 'assignments',
   quizAttempts: 'quiz_attempts',
-  experimentResults: 'experiment_results'
+  experimentResults: 'experiment_results',
+  videoFavorites: 'video_favorites',
+  importHandled: 'import_handled'
 } as const;
 
 type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
@@ -173,7 +180,133 @@ export function migrateLegacyStorage() {
   LEGACY_KEYS.forEach(safeRemove);
 }
 
-// Tiện ích nhỏ cho các component
-export const newId = (prefix: string) =>
-  `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+// Tiện ích nhỏ cho các component. Dùng UUID để bản ghi tạo ngoại tuyến cũng
+// đưa được lên máy chủ (cột id kiểu uuid).
+export const newId = (prefix: string): string => {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  } catch {
+    // bỏ qua
+  }
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+};
+
+export const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+
+// =====================================================================
+// Kho dữ liệu học tập của học sinh (bất đồng bộ, cùng giao diện cho local/remote)
+// =====================================================================
+export interface StudentData {
+  completedExpIds: string[];
+  studentPoints: number;
+  notebooks: NotebookEntry[];
+  quizAttempts: QuizAttempt[];
+  experimentResults: ExperimentResult[];
+  resourceBookmarks: string[];
+  favoriteVideoIds: string[];
+}
+
+export interface StudentStore {
+  mode: 'local' | 'remote';
+  load(): Promise<StudentData>;
+  completeExperiment(expId: string, xp: number): Promise<void>;
+  // Trả về id bản ghi trên máy chủ (để gắn vào bài nộp nhiệm vụ)
+  addExperimentResult(r: ExperimentResult, observation?: string): Promise<string | null>;
+  addQuizAttempt(a: QuizAttempt): Promise<string | null>;
+  addNotebook(e: NotebookEntry): Promise<void>;
+  updateNotebook(id: string, patch: Partial<NotebookEntry>): Promise<void>;
+  deleteNotebook(id: string): Promise<void>;
+  setBookmark(resourceId: string, on: boolean): Promise<void>;
+  setFavoriteVideo(videoId: string, on: boolean): Promise<void>;
+  syncBadges(badgeIds: string[]): Promise<void>;
+}
+
+const loadVideoFavorites = (): string[] => {
+  const saved = loadData<string[] | null>(STORAGE_KEYS.videoFavorites, null);
+  if (saved) return saved;
+  // Phiên bản trước lưu cờ isFavorite ngay trong danh sách video
+  return loadData<ScienceVideo[]>(STORAGE_KEYS.videos, [])
+    .filter((v) => v.isFavorite)
+    .map((v) => v.id);
+};
+
+export const loadLocalSnapshot = (): StudentData => ({
+  completedExpIds: loadData<string[]>(STORAGE_KEYS.completedExps, []),
+  studentPoints: loadData<number>(STORAGE_KEYS.studentPoints, 0),
+  notebooks: loadData<NotebookEntry[]>(STORAGE_KEYS.notebooks, []),
+  quizAttempts: loadData<QuizAttempt[]>(STORAGE_KEYS.quizAttempts, []),
+  experimentResults: loadData<ExperimentResult[]>(STORAGE_KEYS.experimentResults, []),
+  resourceBookmarks: loadData<string[]>(STORAGE_KEYS.resourceBookmarks, []),
+  favoriteVideoIds: loadVideoFavorites()
+});
+
+export const hasLocalLearningData = (d: StudentData = loadLocalSnapshot()) =>
+  d.completedExpIds.length + d.notebooks.length + d.quizAttempts.length + d.experimentResults.length > 0;
+
+// Ghi nhớ (trên thiết bị) rằng đã hỏi tài khoản này về việc nhập dữ liệu cũ
+export const isImportHandled = (userId: string) =>
+  loadData<string[]>(STORAGE_KEYS.importHandled, []).includes(userId);
+export const markImportHandled = (userId: string) => {
+  const list = loadData<string[]>(STORAGE_KEYS.importHandled, []);
+  if (!list.includes(userId)) saveData(STORAGE_KEYS.importHandled, [...list, userId]);
+};
+
+const toggleInList = (key: StorageKey, id: string, on: boolean) => {
+  const list = loadData<string[]>(key, []);
+  const next = on ? (list.includes(id) ? list : [...list, id]) : list.filter((x) => x !== id);
+  saveData(key, next);
+};
+
+export const localStore: StudentStore = {
+  mode: 'local',
+  async load() {
+    return loadLocalSnapshot();
+  },
+  async completeExperiment(expId, xp) {
+    const done = loadData<string[]>(STORAGE_KEYS.completedExps, []);
+    if (done.includes(expId)) return;
+    saveData(STORAGE_KEYS.completedExps, [...done, expId]);
+    saveData(STORAGE_KEYS.studentPoints, loadData<number>(STORAGE_KEYS.studentPoints, 0) + xp);
+  },
+  async addExperimentResult(r) {
+    saveData(STORAGE_KEYS.experimentResults, [r, ...loadData<ExperimentResult[]>(STORAGE_KEYS.experimentResults, [])]);
+    return null;
+  },
+  async addQuizAttempt(a) {
+    saveData(STORAGE_KEYS.quizAttempts, [a, ...loadData<QuizAttempt[]>(STORAGE_KEYS.quizAttempts, [])]);
+    if (a.xpAwarded > 0) {
+      saveData(STORAGE_KEYS.studentPoints, loadData<number>(STORAGE_KEYS.studentPoints, 0) + a.xpAwarded);
+    }
+    return null;
+  },
+  async addNotebook(e) {
+    saveData(STORAGE_KEYS.notebooks, [e, ...loadData<NotebookEntry[]>(STORAGE_KEYS.notebooks, [])]);
+  },
+  async updateNotebook(id, patch) {
+    saveData(
+      STORAGE_KEYS.notebooks,
+      loadData<NotebookEntry[]>(STORAGE_KEYS.notebooks, []).map((e) => (e.id === id ? { ...e, ...patch } : e))
+    );
+  },
+  async deleteNotebook(id) {
+    saveData(
+      STORAGE_KEYS.notebooks,
+      loadData<NotebookEntry[]>(STORAGE_KEYS.notebooks, []).filter((e) => e.id !== id)
+    );
+  },
+  async setBookmark(id, on) {
+    toggleInList(STORAGE_KEYS.resourceBookmarks, id, on);
+  },
+  async setFavoriteVideo(id, on) {
+    saveData(STORAGE_KEYS.videoFavorites, loadVideoFavorites());
+    toggleInList(STORAGE_KEYS.videoFavorites, id, on);
+  },
+  async syncBadges() {
+    // Ngoại tuyến: huy hiệu được tính lại từ dữ liệu mỗi lần, không cần lưu riêng
+  }
+};
+
+// Chọn kho: học sinh đã đăng nhập (và có cấu hình máy chủ) → remote; còn lại → local
+export const getStudentStore = (studentId: string | null): StudentStore =>
+  isSupabaseConfigured && studentId ? createRemoteStore(studentId) : localStore;
 

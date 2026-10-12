@@ -15,10 +15,14 @@ interface Props {
   quizzes: Quiz[];
   attempts: QuizAttempt[];
   onQuizComplete: (attempt: QuizAttempt) => void;
+  // Mở thẳng một thử thách (ví dụ từ "Nhiệm vụ của em")
+  initialQuizId?: string;
 }
 
-export const QuizChallenge: React.FC<Props> = ({ quizzes, attempts, onQuizComplete }) => {
-  const [selectedQuiz, setSelectedQuiz] = useState<Quiz>(quizzes[0]);
+export const QuizChallenge: React.FC<Props> = ({ quizzes, attempts, onQuizComplete, initialQuizId }) => {
+  const [selectedQuiz, setSelectedQuiz] = useState<Quiz>(
+    () => quizzes.find((q) => q.id === initialQuizId) || quizzes[0]
+  );
   const [currentQIndex, setCurrentQIndex] = useState<number>(0);
   const [userAnswers, setUserAnswers] = useState<Record<string, number | boolean>>({});
   const [isAnsweredCurrent, setIsAnsweredCurrent] = useState<boolean>(false);
@@ -65,7 +69,8 @@ export const QuizChallenge: React.FC<Props> = ({ quizzes, attempts, onQuizComple
       correct,
       total,
       xpAwarded: computeQuizXp(correct, quizHistory),
-      wrongQuestionIds: wrongIds
+      wrongQuestionIds: wrongIds,
+      answers: { ...userAnswers }
     };
     onQuizComplete(attempt);
     setLastAttempt(attempt);
