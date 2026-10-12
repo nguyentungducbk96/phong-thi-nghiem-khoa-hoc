@@ -99,7 +99,7 @@ export const SoundVibrationSimulation: React.FC<Props> = ({ onExperimentAction }
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4 bg-slate-50/70">
+      <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 sm:gap-4 bg-slate-50/70">
         <div>
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
             Mô phỏng: Âm thanh được tạo ra như thế nào?
@@ -157,9 +157,9 @@ export const SoundVibrationSimulation: React.FC<Props> = ({ onExperimentAction }
         </div>
       </div>
 
-      <div className="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+      <div className="p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
         {/* SVG Acoustic Canvas */}
-        <div className="lg:col-span-8 bg-slate-900 rounded-xl p-4 relative min-h-[420px] flex flex-col justify-between overflow-hidden text-white">
+        <div className="lg:col-span-8 bg-slate-900 rounded-xl p-3 sm:p-4 relative sm:min-h-[420px] flex flex-col justify-between overflow-hidden text-white">
           <div className="flex items-center justify-between text-xs z-10">
             <span className="bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300">
               Trạng thái: <strong className={vibration > 10 ? 'text-emerald-400' : 'text-slate-400'}>
@@ -172,7 +172,7 @@ export const SoundVibrationSimulation: React.FC<Props> = ({ onExperimentAction }
           </div>
 
           {/* SVG Visual Stage */}
-          <svg viewBox="0 0 500 320" className="w-full h-[280px] select-none my-auto">
+          <svg viewBox="0 0 500 320" className="w-full h-auto max-h-[280px] select-none my-auto">
             {mode === 'drum' ? (
               /* DRUM SCENE */
               <g transform="translate(250, 150)">
@@ -267,12 +267,7 @@ export const SoundVibrationSimulation: React.FC<Props> = ({ onExperimentAction }
                 ))}
 
                 {/* Guitar String vibrating */}
-                <path
-                  d={`M -220 0 Q 0 ${vibration > 5 ? (vibration % 2 === 0 ? 1 : -1) * (vibration * 0.35) : 0}, 220 0`}
-                  fill="none"
-                  stroke="#fbbf24"
-                  strokeWidth="4"
-                  strokeLinecap="round"
+                <g
                   className="cursor-pointer focus:outline-none"
                   role="button"
                   tabIndex={0}
@@ -284,7 +279,17 @@ export const SoundVibrationSimulation: React.FC<Props> = ({ onExperimentAction }
                       handlePluckGuitar();
                     }
                   }}
-                />
+                >
+                  {/* Vùng bấm cao hơn dây đàn để dễ chạm bằng ngón tay */}
+                  <rect x="-220" y="-30" width="440" height="60" fill="transparent" />
+                  <path
+                    d={`M -220 0 Q 0 ${vibration > 5 ? (vibration % 2 === 0 ? 1 : -1) * (vibration * 0.35) : 0}, 220 0`}
+                    fill="none"
+                    stroke="#fbbf24"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                  />
+                </g>
 
                 {/* Ghost blurred lines showing vibration envelope */}
                 {vibration > 15 && (
@@ -321,7 +326,7 @@ export const SoundVibrationSimulation: React.FC<Props> = ({ onExperimentAction }
         </div>
 
         {/* Right: Sound Controls & Vibration Discovery */}
-        <div className="lg:col-span-4 flex flex-col justify-between space-y-4 bg-slate-50/50 p-5 rounded-xl border border-slate-200">
+        <div className="lg:col-span-4 flex flex-col justify-between space-y-4 bg-slate-50/50 p-4 sm:p-5 rounded-xl border border-slate-200">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">

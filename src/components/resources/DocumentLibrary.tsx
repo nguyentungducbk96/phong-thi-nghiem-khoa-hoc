@@ -420,14 +420,14 @@ export const DocumentLibrary: React.FC<Props> = ({
                         <button
                           onClick={() => openStored(res, false)}
                           disabled={busyId === res.id}
-                          className="px-3 py-2 min-h-[40px] text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors flex items-center gap-1"
+                          className="px-3 py-2 min-h-11 lg:min-h-10 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors flex items-center gap-1"
                         >
                           {busyId === res.id ? <Spinner className="w-3.5 h-3.5" /> : <ExternalLink className="w-3.5 h-3.5" />} Mở tài liệu
                         </button>
                         <button
                           onClick={() => openStored(res, true)}
                           disabled={busyId === res.id}
-                          className="px-3 py-2 min-h-[40px] text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1"
+                          className="px-3 py-2 min-h-11 lg:min-h-10 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1"
                         >
                           <Download className="w-3.5 h-3.5" /> Tải về
                         </button>
@@ -438,7 +438,7 @@ export const DocumentLibrary: React.FC<Props> = ({
                           href={res.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-3 py-2 min-h-[40px] text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors flex items-center gap-1"
+                          className="px-3 py-2 min-h-11 lg:min-h-10 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors flex items-center gap-1"
                         >
                           <ExternalLink className="w-3.5 h-3.5" /> Mở tài liệu
                         </a>
@@ -448,7 +448,7 @@ export const DocumentLibrary: React.FC<Props> = ({
                             target="_blank"
                             rel="noopener noreferrer"
                             download
-                            className="px-3 py-2 min-h-[40px] text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1"
+                            className="px-3 py-2 min-h-11 lg:min-h-10 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1"
                           >
                             <Download className="w-3.5 h-3.5" /> Tải về
                           </a>
@@ -487,7 +487,7 @@ export const DocumentLibrary: React.FC<Props> = ({
             role="dialog"
             aria-modal="true"
             aria-labelledby="res-form-title"
-            className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 shadow-xl space-y-4 border border-slate-200"
+            className="bg-white rounded-2xl max-w-lg w-full max-h-[90dvh] overflow-y-auto p-4 sm:p-6 shadow-xl space-y-4 border border-slate-200"
           >
             <h3 id="res-form-title" className="text-base font-bold text-slate-900">
               {editingId ? 'Sửa tài liệu' : 'Thêm tài liệu học tập'}

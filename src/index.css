@@ -1,9 +1,55 @@
 @import "tailwindcss";
 
 @layer base {
+  html {
+    /* Thanh trên dính (cao 4rem): cuộn tới phần tử / tiêu điểm không bị thanh che */
+    scroll-padding-top: 5rem;
+    -webkit-text-size-adjust: 100%;
+  }
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    /* Từ dài / đường dẫn dài tự xuống dòng thay vì đẩy trang rộng ra */
+    overflow-wrap: break-word;
   }
+  img,
+  video,
+  iframe,
+  svg {
+    max-width: 100%;
+  }
+  /* Viền tiêu điểm rõ ràng khi dùng bàn phím */
+  :focus-visible {
+    outline: 3px solid #0891b2;
+    outline-offset: 2px;
+  }
+  /* Vùng chạm tối thiểu 44px trên màn hình cảm ứng / màn hình hẹp */
+  @media (pointer: coarse), (max-width: 1023.98px) {
+    button,
+    select,
+    [role='button'],
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']) {
+      min-height: 44px;
+    }
+    input[type='range'] {
+      min-height: 32px;
+    }
+  }
+  input[type='range'] {
+    touch-action: none;
+  }
+}
+
+/* Lưới an toàn cuối cùng (các nguyên nhân tràn ngang đã được sửa tận gốc) */
+body {
+  overflow-x: clip;
+}
+
+/* Hàng cuộn ngang nội bộ: ẩn thanh cuộn nhưng vẫn vuốt được */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 @keyframes float {

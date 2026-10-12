@@ -59,7 +59,7 @@ export const Modal: React.FC<Props> = ({ title, onClose, children, size = 'md' }
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`bg-white rounded-2xl ${width} w-full max-h-[92vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6 shadow-xl border border-slate-200 focus:outline-none`}
+        className={`bg-white rounded-2xl ${width} w-full max-h-[92dvh] overflow-y-auto overflow-x-hidden p-4 sm:p-6 shadow-xl border border-slate-200 focus:outline-none`}
       >
         <div className="flex items-start justify-between gap-3 mb-4">
           <h3 id={titleId} className="text-base font-bold text-slate-900 min-w-0 break-words">

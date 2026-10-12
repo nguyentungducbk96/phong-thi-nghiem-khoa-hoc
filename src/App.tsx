@@ -328,7 +328,7 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800 overflow-x-clip">
+    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
       <Navbar
         currentTab={currentTab}
         onSelectTab={selectTab}
@@ -349,14 +349,14 @@ export default function App() {
         <div className="bg-amber-50 border-b border-amber-200 text-amber-900 px-4 py-2 text-xs">
           <div className="max-w-7xl mx-auto flex flex-wrap items-center gap-x-3 gap-y-1">
             <span>Em đang dùng với tư cách khách — kết quả chỉ lưu trên máy này. Đăng nhập để lưu kết quả trực tuyến.</span>
-            <button onClick={() => setShowLogin(true)} className="font-bold underline min-h-[32px]">Đăng nhập</button>
+            <button onClick={() => setShowLogin(true)} className="font-bold underline min-h-11 lg:min-h-10">Đăng nhập</button>
           </div>
         </div>
       ) : auth.profile?.status === 'pending' ? (
         <div className="bg-amber-50 border-b border-amber-200 text-amber-900 px-4 py-2 text-xs">
           <div className="max-w-7xl mx-auto flex flex-wrap items-center gap-x-3 gap-y-1">
             <span>Tài khoản giáo viên của thầy cô đang chờ quản trị viên duyệt. Trong lúc chờ, thầy cô vẫn xem được thí nghiệm như khách.</span>
-            <button onClick={() => auth.refreshProfile()} className="font-bold underline min-h-[32px]">Kiểm tra lại</button>
+            <button onClick={() => auth.refreshProfile()} className="font-bold underline min-h-11 lg:min-h-10">Kiểm tra lại</button>
           </div>
         </div>
       ) : auth.profile?.status === 'locked' ? (
@@ -618,21 +618,19 @@ export default function App() {
         onSelectExperimentById={handleSelectExperimentById}
       />
 
-      {/* Standard Educational Footer */}
-      <footer className="bg-white border-t border-slate-200 mt-16 py-8 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500">
-          <div>
-            <span className="font-bold text-slate-800">
-              Phòng Thí Nghiệm Khoa Học Thông Minh (Smart Science Lab)
-            </span>
-            <span className="mx-2">·</span>
-            <span>Khơi nguồn tò mò – Khám phá khoa học – Sáng tạo tương lai</span>
+      {/* Chân trang */}
+      <footer className="bg-white border-t border-slate-200 mt-12 sm:mt-16 py-8 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto grid gap-4 sm:grid-cols-2 sm:items-center text-sm text-slate-500">
+          <div className="space-y-1">
+            <p className="font-bold text-slate-800">Phòng Thí Nghiệm Khoa Học Thông Minh</p>
+            <p className="text-xs">Khơi nguồn tò mò – Khám phá khoa học – Sáng tạo tương lai</p>
           </div>
-
-          <div className="flex items-center gap-4">
-            <span>Dành cho học sinh & giáo viên Khoa học lớp 4</span>
-            <span>·</span>
-            <span>{storageNote}</span>
+          <div className="space-y-1 text-xs sm:text-right">
+            <p>Dành cho học sinh và giáo viên Khoa học lớp 4</p>
+            <p className="inline-flex items-center gap-1.5 text-slate-600">
+              <span className={`w-2 h-2 rounded-full shrink-0 ${online ? 'bg-emerald-500' : 'bg-amber-400'}`} aria-hidden="true" />
+              {storageNote}
+            </p>
           </div>
         </div>
       </footer>

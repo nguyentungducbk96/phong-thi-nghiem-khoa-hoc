@@ -356,7 +356,7 @@ export const TeacherDashboard: React.FC<Props> = ({ experiments, quizzes, onSele
       {label}
     </button>
   );
-  const smallBtn = 'min-h-[36px] px-2.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1 disabled:opacity-50';
+  const smallBtn = 'min-h-11 lg:min-h-10 px-2.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1 disabled:opacity-50';
 
   if (loadingClasses) return <LoadingState text="Đang tải lớp học..." />;
 
@@ -458,7 +458,7 @@ export const TeacherDashboard: React.FC<Props> = ({ experiments, quizzes, onSele
                   <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
                     <h3 className="text-sm font-bold text-slate-900">Danh sách học sinh lớp {selected.name}</h3>
                     <div className="flex flex-wrap gap-2">
-                      <button onClick={() => setShowAddStudents(true)} className={`${btnPrimary} !bg-teal-600 hover:!bg-teal-700 !min-h-[40px] !py-2`}>
+                      <button onClick={() => setShowAddStudents(true)} className={`${btnPrimary} !bg-teal-600 hover:!bg-teal-700 !min-h-11 lg:!min-h-10 !py-2`}>
                         <Plus className="w-4 h-4" /> Thêm học sinh
                       </button>
                       <button
@@ -472,7 +472,7 @@ export const TeacherDashboard: React.FC<Props> = ({ experiments, quizzes, onSele
                         }}
                         disabled={members.length > 0 || busy === 'delclass'}
                         title={members.length > 0 ? 'Xóa hết học sinh trước khi xóa lớp' : undefined}
-                        className={`${btnSecondary} !min-h-[40px] !py-2 !text-rose-700`}
+                        className={`${btnSecondary} !min-h-11 lg:!min-h-10 !py-2 !text-rose-700`}
                       >
                         <Trash2 className="w-4 h-4" /> Xóa lớp
                       </button>
@@ -574,8 +574,8 @@ export const TeacherDashboard: React.FC<Props> = ({ experiments, quizzes, onSele
                             </button>
                           </div>
                           {open && (
-                            <div className="overflow-x-auto -mx-1">
-                              <table className="w-full min-w-[480px] text-left text-xs">
+                            <div className="-mx-1">
+                              <table className="w-full text-left text-xs [&_td]:align-top [&_td]:break-words">
                                 <thead className="bg-slate-50 text-slate-500">
                                   <tr>
                                     <th className="py-2 px-2">STT</th>
@@ -623,8 +623,37 @@ export const TeacherDashboard: React.FC<Props> = ({ experiments, quizzes, onSele
                   {members.length === 0 ? (
                     <div className="p-8 text-center text-sm text-slate-500">Chưa có học sinh.</div>
                   ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full min-w-[720px] text-left text-xs">
+                    <>
+                    {/* Điện thoại / máy tính bảng dọc: mỗi học sinh một thẻ */}
+                    <ul className="md:hidden divide-y divide-slate-100">
+                      {summary.map((s) => (
+                        <li key={s.m.student_id} className="p-4 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <span className="text-xs text-slate-400 mr-1.5">{s.m.number}.</span>
+                              <span className="font-semibold text-slate-900 break-words">{s.m.display_name}</span>
+                            </div>
+                            <button onClick={() => setDetailStudent(s.m)} className={`${smallBtn} shrink-0 bg-teal-50 text-teal-800 hover:bg-teal-100`}>
+                              <Eye className="w-3.5 h-3.5" /> Chi tiết
+                            </button>
+                          </div>
+                          <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                            <dt className="text-slate-500">Thí nghiệm xong</dt>
+                            <dd className="font-semibold text-slate-800">{s.prog.length}/{experiments.length}</dd>
+                            <dt className="text-slate-500">Thử thách</dt>
+                            <dd className="font-semibold text-slate-800">{s.atts.length ? `${s.atts.length} lần · ${s.quizPct}%` : 'Chưa làm'}</dd>
+                            <dt className="text-slate-500">Sổ tay</dt>
+                            <dd className="font-semibold text-slate-800">{s.nbs.length}</dd>
+                            <dt className="text-slate-500">Nhiệm vụ nộp</dt>
+                            <dd className="font-semibold text-slate-800">{s.subs.length}/{assignments.length}</dd>
+                            <dt className="text-slate-500">Gần nhất</dt>
+                            <dd className="text-slate-600">{s.last ? formatDateTime(s.last) : 'Chưa có'}</dd>
+                          </dl>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="hidden md:block">
+                      <table className="w-full text-left text-xs">
                         <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
                           <tr>
                             <th className="py-3 px-3">STT</th>
@@ -657,6 +686,7 @@ export const TeacherDashboard: React.FC<Props> = ({ experiments, quizzes, onSele
                         </tbody>
                       </table>
                     </div>
+                    </>
                   )}
                 </div>
               )}
@@ -734,8 +764,8 @@ export const TeacherDashboard: React.FC<Props> = ({ experiments, quizzes, onSele
           <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-2.5 mb-3">
             Mã PIN chỉ hiện <strong>một lần</strong>. Thầy cô hãy in hoặc tải danh sách ngay trước khi đóng hộp thoại này.
           </p>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[420px] text-left text-sm">
+          <div>
+            <table className="w-full text-left text-sm [&_td]:align-top">
               <thead className="bg-slate-50 text-slate-500 text-xs">
                 <tr>
                   <th className="py-2 px-2">STT</th>
@@ -749,7 +779,7 @@ export const TeacherDashboard: React.FC<Props> = ({ experiments, quizzes, onSele
                   <tr key={s.id}>
                     <td className="py-2 px-2 text-slate-400">{i + 1}</td>
                     <td className="py-2 px-2 font-semibold">{s.name}</td>
-                    <td className="py-2 px-2 font-mono">{s.username}</td>
+                    <td className="py-2 px-2 font-mono break-all">{s.username}</td>
                     <td className="py-2 px-2 font-mono tracking-widest">{s.pin}</td>
                   </tr>
                 ))}

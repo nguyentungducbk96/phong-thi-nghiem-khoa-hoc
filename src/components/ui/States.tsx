@@ -14,7 +14,7 @@ export const ErrorState: React.FC<{ text: string; onRetry?: () => void }> = ({ t
     <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
     <span className="flex-1 min-w-0 break-words">{text}</span>
     {onRetry && (
-      <button onClick={onRetry} className="px-3 py-2 min-h-[40px] rounded-xl bg-white border border-rose-300 font-semibold hover:bg-rose-100">
+      <button onClick={onRetry} className="px-3 py-2 min-h-11 lg:min-h-10 rounded-xl bg-white border border-rose-300 font-semibold hover:bg-rose-100">
         Thử lại
       </button>
     )}

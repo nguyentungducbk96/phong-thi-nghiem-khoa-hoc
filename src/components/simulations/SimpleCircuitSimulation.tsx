@@ -231,7 +231,7 @@ export const SimpleCircuitSimulation: React.FC<Props> = ({ onExperimentAction })
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4 bg-slate-50/70">
+      <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 sm:gap-4 bg-slate-50/70">
         <div>
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
             Mô phỏng: Lắp mạch điện thắp sáng đơn giản
@@ -249,9 +249,9 @@ export const SimpleCircuitSimulation: React.FC<Props> = ({ onExperimentAction })
         </button>
       </div>
 
-      <div className="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+      <div className="p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
         {/* SVG Circuit Canvas */}
-        <div className="lg:col-span-8 bg-slate-900 rounded-xl p-4 relative min-h-[420px] flex flex-col justify-between overflow-hidden text-white">
+        <div className="lg:col-span-8 bg-slate-900 rounded-xl p-3 sm:p-4 relative sm:min-h-[420px] flex flex-col justify-between overflow-hidden text-white">
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs z-10">
             <div className="flex items-center gap-2 bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-lg" aria-live="polite">
               <span className="text-slate-400">Trạng thái:</span>
@@ -268,7 +268,7 @@ export const SimpleCircuitSimulation: React.FC<Props> = ({ onExperimentAction })
           <svg
             ref={svgRef}
             viewBox="0 0 520 340"
-            className="w-full h-[320px] select-none my-auto"
+            className="w-full h-auto max-h-[320px] select-none my-auto"
             style={{ touchAction: 'none' }}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -313,6 +313,8 @@ export const SimpleCircuitSimulation: React.FC<Props> = ({ onExperimentAction })
                   }
                 }}
               >
+                {/* Vùng bấm rộng cho ngón tay */}
+                <rect x="-6" y="-24" width="100" height="48" fill="transparent" />
                 <line x1="0" y1="0" x2="80" y2="0" stroke="#f59e0b" strokeWidth="5" strokeLinecap="round" />
                 <circle cx="80" cy="0" r="7" fill="#ef4444" />
               </g>
@@ -396,7 +398,7 @@ export const SimpleCircuitSimulation: React.FC<Props> = ({ onExperimentAction })
                   }
                 }}
               >
-                <circle cx={t.x} cy={t.y} r="16" fill="transparent" />
+                <circle cx={t.x} cy={t.y} r="22" fill="transparent" />
                 {selected === t.id && (
                   <circle cx={t.x} cy={t.y} r="13" fill="none" stroke="#fde68a" strokeWidth="2.5" className="animate-pulse" />
                 )}
@@ -415,7 +417,7 @@ export const SimpleCircuitSimulation: React.FC<Props> = ({ onExperimentAction })
         </div>
 
         {/* Right panel */}
-        <div className="lg:col-span-4 flex flex-col justify-between space-y-4 bg-slate-50/50 p-5 rounded-xl border border-slate-200">
+        <div className="lg:col-span-4 flex flex-col justify-between space-y-4 bg-slate-50/50 p-4 sm:p-5 rounded-xl border border-slate-200">
           <div className="space-y-4">
             <div className="p-3 rounded-lg bg-white border border-slate-200 text-xs text-slate-700 flex items-start gap-2" aria-live="polite">
               <MousePointerClick className="w-4 h-4 text-cyan-600 shrink-0 mt-0.5" />

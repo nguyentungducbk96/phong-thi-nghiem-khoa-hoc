@@ -112,7 +112,7 @@ export const ExperimentCatalog: React.FC<Props> = ({
         </div>
 
         {/* Topic Horizontal Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pt-2 border-t border-slate-100">
+        <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-slate-100">
           <button
             onClick={() => setSelectedTopic('all')}
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg border whitespace-nowrap transition-colors ${

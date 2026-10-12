@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { NotebookEntry } from '../../types';
+import { Modal, inputCls, btnPrimary, btnSecondary } from '../ui/Modal';
 import { BookOpen, Calendar, Edit3, Trash2, Printer, Plus, Search, Sparkles, Check } from 'lucide-react';
 
 interface Props {
@@ -331,11 +332,7 @@ export const ScientistNotebook: React.FC<Props> = ({
 
       {/* Modal: Create Manual Lab Entry */}
       {showNewModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 border border-slate-200">
-            <h3 className="text-base font-bold text-slate-900">
-              Ghi chép thí nghiệm mới vào Sổ tay
-            </h3>
+        <Modal title="Ghi chép thí nghiệm mới vào Sổ tay" onClose={() => setShowNewModal(false)}>
             <form onSubmit={handleCreateNew} className="space-y-3 text-xs">
               <div>
                 <label className="font-semibold text-slate-700 block mb-1">Tên thí nghiệm:</label>
@@ -345,7 +342,7 @@ export const ScientistNotebook: React.FC<Props> = ({
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   placeholder="Ví dụ: Thử nghiệm lọc nước bằng cát sỏi"
-                  className="w-full p-2.5 border border-slate-300 rounded-xl focus:border-cyan-500 focus:outline-none"
+                  className={inputCls}
                 />
               </div>
               <div>
@@ -355,7 +352,7 @@ export const ScientistNotebook: React.FC<Props> = ({
                   value={newHypothesis}
                   onChange={(e) => setNewHypothesis(e.target.value)}
                   placeholder="Điều em nghĩ sẽ xảy ra..."
-                  className="w-full p-2.5 border border-slate-300 rounded-xl focus:border-cyan-500 focus:outline-none"
+                  className={inputCls}
                 />
               </div>
               <div>
@@ -365,7 +362,7 @@ export const ScientistNotebook: React.FC<Props> = ({
                   value={newObservation}
                   onChange={(e) => setNewObservation(e.target.value)}
                   placeholder="Nước sau khi qua lớp cát sỏi trở nên trong hơn..."
-                  className="w-full p-2.5 border border-slate-300 rounded-xl focus:border-cyan-500 focus:outline-none"
+                  className={inputCls}
                 />
               </div>
               <div>
@@ -375,7 +372,7 @@ export const ScientistNotebook: React.FC<Props> = ({
                   value={newConclusion}
                   onChange={(e) => setNewConclusion(e.target.value)}
                   placeholder="Lớp cát sỏi giữ lại các hạt cặn bẩn trong nước..."
-                  className="w-full p-2.5 border border-slate-300 rounded-xl focus:border-cyan-500 focus:outline-none"
+                  className={inputCls}
                 />
               </div>
               <div>
@@ -385,28 +382,27 @@ export const ScientistNotebook: React.FC<Props> = ({
                   value={newNotes}
                   onChange={(e) => setNewNotes(e.target.value)}
                   placeholder="Ý tưởng hoặc câu hỏi mở rộng..."
-                  className="w-full p-2.5 border border-slate-300 rounded-xl focus:border-cyan-500 focus:outline-none"
+                  className={inputCls}
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex flex-wrap justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowNewModal(false)}
-                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl"
+                  className={btnSecondary}
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 font-bold text-white bg-cyan-600 hover:bg-cyan-700 rounded-xl transition-colors shadow-2xs"
+                  className={btnPrimary}
                 >
                   Lưu vào sổ tay
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

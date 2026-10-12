@@ -158,7 +158,7 @@ export const WaterEvaporationCondensationSimulation: React.FC<Props> = ({ onExpe
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4 bg-slate-50/70">
+      <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 sm:gap-4 bg-slate-50/70">
         <div>
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
             Mô phỏng: Nước bay hơi và ngưng tụ
@@ -185,9 +185,9 @@ export const WaterEvaporationCondensationSimulation: React.FC<Props> = ({ onExpe
         </div>
       </div>
 
-      <div className="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+      <div className="p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
         {/* Left: SVG Apparatus Canvas */}
-        <div className="lg:col-span-8 bg-slate-900 rounded-xl p-4 relative min-h-[420px] flex flex-col justify-between overflow-hidden text-white">
+        <div className="lg:col-span-8 bg-slate-900 rounded-xl p-3 sm:p-4 relative sm:min-h-[420px] flex flex-col justify-between overflow-hidden text-white">
           {/* Status Displays */}
           <div className="flex flex-wrap items-center gap-2 z-10">
             <div className="bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-mono flex items-center gap-2">
@@ -211,7 +211,7 @@ export const WaterEvaporationCondensationSimulation: React.FC<Props> = ({ onExpe
           </div>
 
           {/* SVG Diagram Canvas */}
-          <svg viewBox="0 0 500 340" className="w-full h-[310px] select-none my-auto" role="img" aria-label="Bình nước được đun, hơi nước bay lên gặp đĩa lạnh và ngưng tụ thành giọt rơi vào cốc hứng">
+          <svg viewBox="0 0 500 340" className="w-full h-auto max-h-[310px] select-none my-auto" role="img" aria-label="Bình nước được đun, hơi nước bay lên gặp đĩa lạnh và ngưng tụ thành giọt rơi vào cốc hứng">
             <defs>
               <clipPath id="flaskInside">
                 <path d="M -13 -40 L -13 -10 L -43 55 A 43 43 0 0 0 43 55 L 13 -10 L 13 -40 Z" />
@@ -358,7 +358,7 @@ export const WaterEvaporationCondensationSimulation: React.FC<Props> = ({ onExpe
         </div>
 
         {/* Right: Controls */}
-        <div className="lg:col-span-4 flex flex-col justify-between space-y-4 bg-slate-50/50 p-5 rounded-xl border border-slate-200">
+        <div className="lg:col-span-4 flex flex-col justify-between space-y-4 bg-slate-50/50 p-4 sm:p-5 rounded-xl border border-slate-200">
           <div>
             <div className="pb-3 border-b border-slate-200">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">

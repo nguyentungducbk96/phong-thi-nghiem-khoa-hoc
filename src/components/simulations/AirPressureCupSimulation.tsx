@@ -124,7 +124,7 @@ export const AirPressureCupSimulation: React.FC<Props> = ({ onExperimentAction }
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
       {/* Simulation Header Bar */}
-      <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4 bg-slate-50/70">
+      <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 sm:gap-4 bg-slate-50/70">
         <div>
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
             Mô phỏng: Chiếc cốc úp ngược trong chậu nước
@@ -167,9 +167,9 @@ export const AirPressureCupSimulation: React.FC<Props> = ({ onExperimentAction }
       </div>
 
       {/* Main Canvas & Stage */}
-      <div className="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+      <div className="p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
         {/* Left: SVG Canvas Stage */}
-        <div className="lg:col-span-8 bg-gradient-to-b from-sky-50 via-cyan-50/40 to-blue-50/80 rounded-xl border border-sky-100 p-4 relative min-h-[420px] flex flex-col justify-end overflow-hidden">
+        <div className="lg:col-span-8 bg-gradient-to-b from-sky-50 via-cyan-50/40 to-blue-50/80 rounded-xl border border-sky-100 p-3 sm:p-4 relative sm:min-h-[420px] flex flex-col justify-end overflow-hidden">
           {/* Scientific Status Badge */}
           <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
             <div className="bg-white/95 backdrop-blur-sm border border-slate-200 px-3 py-1.5 rounded-lg shadow-2xs text-xs font-medium flex items-center gap-2">
@@ -200,7 +200,7 @@ export const AirPressureCupSimulation: React.FC<Props> = ({ onExperimentAction }
           <svg
             ref={svgRef}
             viewBox="0 0 500 360"
-            className="w-full h-[340px] select-none"
+            className="w-full h-auto max-h-[340px] select-none"
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
@@ -374,7 +374,7 @@ export const AirPressureCupSimulation: React.FC<Props> = ({ onExperimentAction }
         </div>
 
         {/* Right: Interactive Controls & Observation Deck */}
-        <div className="lg:col-span-4 flex flex-col justify-between space-y-4 bg-slate-50/50 p-5 rounded-xl border border-slate-200">
+        <div className="lg:col-span-4 flex flex-col justify-between space-y-4 bg-slate-50/50 p-4 sm:p-5 rounded-xl border border-slate-200">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">

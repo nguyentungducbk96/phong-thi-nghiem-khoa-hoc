@@ -287,7 +287,7 @@ export const VideoLibrary: React.FC<Props> = ({
         </div>
 
         {/* Topic tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
+        <div className="flex flex-wrap items-center gap-1.5 max-w-full">
           <button
             onClick={() => setSelectedTopic('all')}
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg border whitespace-nowrap transition-colors ${
@@ -404,14 +404,14 @@ export const VideoLibrary: React.FC<Props> = ({
                 <div className="flex gap-2">
                   <button
                     onClick={() => openEdit(vid)}
-                    className="flex-1 min-h-[40px] text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl flex items-center justify-center gap-1"
+                    className="flex-1 min-h-11 lg:min-h-10 text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl flex items-center justify-center gap-1"
                   >
                     <Pencil className="w-3.5 h-3.5" /> Sửa
                   </button>
                   <button
                     onClick={() => handleDelete(vid)}
                     disabled={busyId === vid.id}
-                    className="flex-1 min-h-[40px] text-xs font-semibold text-rose-600 bg-white border border-rose-200 hover:bg-rose-50 rounded-xl flex items-center justify-center gap-1"
+                    className="flex-1 min-h-11 lg:min-h-10 text-xs font-semibold text-rose-600 bg-white border border-rose-200 hover:bg-rose-50 rounded-xl flex items-center justify-center gap-1"
                   >
                     {busyId === vid.id ? <Spinner className="w-3.5 h-3.5" /> : <Trash2 className="w-3.5 h-3.5" />} Xóa
                   </button>
@@ -430,13 +430,13 @@ export const VideoLibrary: React.FC<Props> = ({
 
       {/* Video Watch & Reflection Modal */}
       {activeVideo && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div role="dialog" aria-modal="true" aria-label={activeVideo.title} className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4 border border-slate-200">
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) setActiveVideo(null); }}>
+          <div role="dialog" aria-modal="true" aria-label={activeVideo.title} className="bg-white rounded-2xl max-w-3xl w-full max-h-[90dvh] overflow-y-auto p-4 sm:p-6 space-y-4 border border-slate-200">
             <div className="flex items-start justify-between gap-3 pb-2 border-b border-slate-100">
               <h3 className="text-base font-bold text-slate-900 min-w-0 break-words">{activeVideo.title}</h3>
               <button
                 onClick={() => setActiveVideo(null)}
-                className="text-slate-500 hover:text-slate-800 text-sm font-bold shrink-0 min-h-[40px] px-2"
+                className="text-slate-500 hover:text-slate-800 text-sm font-bold shrink-0 min-h-11 lg:min-h-10 px-2"
               >
                 ✕ Đóng
               </button>
@@ -480,7 +480,7 @@ export const VideoLibrary: React.FC<Props> = ({
       {/* Add Video Modal for Teachers */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div role="dialog" aria-modal="true" aria-labelledby="vid-form-title" className="bg-white rounded-2xl max-w-lg w-full max-h-[92vh] overflow-y-auto p-4 sm:p-6 shadow-xl space-y-4 border border-slate-200">
+          <div role="dialog" aria-modal="true" aria-labelledby="vid-form-title" className="bg-white rounded-2xl max-w-lg w-full max-h-[92dvh] overflow-y-auto p-4 sm:p-6 shadow-xl space-y-4 border border-slate-200">
             <h3 id="vid-form-title" className="text-base font-bold text-slate-900">{editing ? 'Sửa video' : 'Thêm video bài giảng mới'}</h3>
             <form onSubmit={handleCreateVideo} className="space-y-3 text-xs">
               <div>

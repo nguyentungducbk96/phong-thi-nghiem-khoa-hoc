@@ -202,7 +202,7 @@ export const Navbar: React.FC<Props> = ({ currentTab, onSelectTab, studentPoints
 
             <button
               onClick={onOpenAssistant}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 min-h-[40px] rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold text-xs hover:from-cyan-700 hover:to-blue-700 transition-all"
+              className="flex items-center justify-center gap-1.5 min-w-11 px-2.5 sm:px-3 min-h-11 lg:min-h-10 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold text-xs hover:from-cyan-700 hover:to-blue-700 transition-all"
               title="Mở Bạn Khoa Học"
               aria-label="Mở Bạn Khoa Học"
             >
@@ -219,7 +219,7 @@ export const Navbar: React.FC<Props> = ({ currentTab, onSelectTab, studentPoints
                       onClick={() => setUserOpen((o) => !o)}
                       aria-expanded={userOpen}
                       aria-haspopup="true"
-                      className="flex items-center gap-1.5 max-w-[180px] px-2.5 min-h-[40px] rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700"
+                      className="flex items-center gap-1.5 max-w-[180px] px-2.5 min-h-11 lg:min-h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700"
                     >
                       <UserRound className="w-4 h-4 shrink-0" />
                       <span className="truncate">{name}</span>
@@ -239,7 +239,7 @@ export const Navbar: React.FC<Props> = ({ currentTab, onSelectTab, studentPoints
                             setUserOpen(false);
                             onLogout();
                           }}
-                          className="w-full min-h-[40px] flex items-center justify-center gap-1.5 rounded-lg bg-rose-50 text-rose-700 font-semibold text-sm hover:bg-rose-100"
+                          className="w-full min-h-11 lg:min-h-10 flex items-center justify-center gap-1.5 rounded-lg bg-rose-50 text-rose-700 font-semibold text-sm hover:bg-rose-100"
                         >
                           <LogOut className="w-4 h-4" /> Đăng xuất
                         </button>
@@ -249,7 +249,7 @@ export const Navbar: React.FC<Props> = ({ currentTab, onSelectTab, studentPoints
                 ) : (
                   <button
                     onClick={onOpenLogin}
-                    className="flex items-center gap-1.5 px-3 min-h-[40px] rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-700"
+                    className="flex items-center gap-1.5 px-3 min-h-11 lg:min-h-10 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-700"
                   >
                     <LogIn className="w-4 h-4" /> Đăng nhập
                   </button>
@@ -274,10 +274,13 @@ export const Navbar: React.FC<Props> = ({ currentTab, onSelectTab, studentPoints
 
       {/* Menu điện thoại: thả xuống dưới thanh trên */}
       {mobileOpen && (
+        <div aria-hidden="true" className="lg:hidden absolute left-0 right-0 top-full h-[100dvh] bg-slate-900/30" />
+      )}
+      {mobileOpen && (
         <div
           id="mobile-menu"
           ref={panelRef}
-          className="lg:hidden absolute left-0 right-0 top-full bg-white border-b border-slate-200 shadow-xl max-h-[calc(100vh-4rem)] overflow-y-auto"
+          className="lg:hidden absolute left-0 right-0 top-full bg-white border-b border-slate-200 shadow-xl max-h-[calc(100dvh-4rem)] overflow-y-auto"
         >
           <nav aria-label="Menu" className="max-w-7xl mx-auto px-4 sm:px-6 py-3 grid grid-cols-1 sm:grid-cols-2 gap-1">
             {all.map((item) => (

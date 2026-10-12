@@ -62,7 +62,7 @@ export const LightPropagationSimulation: React.FC<Props> = ({ onExperimentAction
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4 bg-slate-50/70">
+      <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 sm:gap-4 bg-slate-50/70">
         <div>
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
             Mô phỏng: Sự truyền thẳng của ánh sáng & Tạo thành bóng tối
@@ -98,9 +98,9 @@ export const LightPropagationSimulation: React.FC<Props> = ({ onExperimentAction
         </div>
       </div>
 
-      <div className="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+      <div className="p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
         {/* SVG Optical Bench */}
-        <div className="lg:col-span-8 bg-slate-950 rounded-xl p-4 relative min-h-[420px] flex flex-col justify-between overflow-hidden text-white">
+        <div className="lg:col-span-8 bg-slate-950 rounded-xl p-3 sm:p-4 relative sm:min-h-[420px] flex flex-col justify-between overflow-hidden text-white">
           <div className="flex items-center justify-between text-xs z-10">
             <span className="bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300">
               Chất liệu vật cản:{' '}
@@ -119,7 +119,7 @@ export const LightPropagationSimulation: React.FC<Props> = ({ onExperimentAction
             </span>
           </div>
 
-          <svg viewBox="0 0 500 340" className="w-full h-[320px] select-none my-auto">
+          <svg viewBox="0 0 500 340" className="w-full h-auto max-h-[320px] select-none my-auto">
             {/* Optical Rail (Thanh trượt quang học) */}
             <rect x="20" y="300" width="460" height="12" rx="3" fill="#334155" />
             <line x1="20" y1="306" x2="480" y2="306" stroke="#475569" strokeWidth="2" strokeDasharray="5,5" />
@@ -227,7 +227,7 @@ export const LightPropagationSimulation: React.FC<Props> = ({ onExperimentAction
         </div>
 
         {/* Right: Optical Controls Deck */}
-        <div className="lg:col-span-4 flex flex-col justify-between space-y-4 bg-slate-50/50 p-5 rounded-xl border border-slate-200">
+        <div className="lg:col-span-4 flex flex-col justify-between space-y-4 bg-slate-50/50 p-4 sm:p-5 rounded-xl border border-slate-200">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">

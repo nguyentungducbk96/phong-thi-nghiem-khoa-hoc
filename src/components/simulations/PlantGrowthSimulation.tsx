@@ -168,7 +168,7 @@ export const PlantGrowthSimulation: React.FC<Props> = ({ onExperimentAction }) =
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4 bg-slate-50/70">
+      <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 sm:gap-4 bg-slate-50/70">
         <div>
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
             Mô phỏng: Cây cần gì để sống và phát triển?
@@ -205,7 +205,7 @@ export const PlantGrowthSimulation: React.FC<Props> = ({ onExperimentAction }) =
         </div>
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
         {/* Simulation disclaimer */}
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2.5 text-xs text-amber-800">
           <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />

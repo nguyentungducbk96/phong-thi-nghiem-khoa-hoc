@@ -165,6 +165,24 @@ export const ScienceAssistantModal: React.FC<Props> = ({
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
+  // Esc đóng hộp thoại; đưa tiêu điểm vào ô nhập và trả lại khi đóng
+  const inputRef = useRef<HTMLInputElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.activeElement as HTMLElement | null;
+    inputRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeRef.current();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      prev?.focus?.();
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const pushBot = (msg: Omit<Message, 'id' | 'sender'>) => {
@@ -219,16 +237,21 @@ export const ScienceAssistantModal: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center sm:p-4"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="assistant-title"
-        className="bg-white rounded-3xl max-w-xl w-full h-[600px] max-h-[90vh] flex flex-col justify-between shadow-2xl border border-slate-200 overflow-hidden"
+        className="bg-white sm:rounded-3xl sm:max-w-xl w-full h-full sm:h-[640px] sm:max-h-[90dvh] flex flex-col justify-between shadow-2xl sm:border border-slate-200 overflow-hidden"
       >
         {/* Header */}
-        <div className="p-4 px-6 bg-gradient-to-r from-cyan-600 to-blue-600 text-white flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="p-3 sm:p-4 sm:px-6 bg-gradient-to-r from-cyan-600 to-blue-600 text-white flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-xl shadow-inner">
               🔬
             </div>
@@ -245,7 +268,7 @@ export const ScienceAssistantModal: React.FC<Props> = ({
           <button
             onClick={onClose}
             aria-label="Đóng Bạn Khoa Học"
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            className="w-11 h-11 shrink-0 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -258,14 +281,14 @@ export const ScienceAssistantModal: React.FC<Props> = ({
         </div>
 
         {/* Chat History */}
-        <div ref={listRef} className="flex-1 p-5 overflow-y-auto space-y-3.5 bg-slate-50/50" aria-live="polite">
+        <div ref={listRef} className="flex-1 min-h-0 p-3 sm:p-5 overflow-y-auto space-y-3.5 bg-slate-50/50" aria-live="polite">
           {messages.map((m) => (
             <div
               key={m.id}
               className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}
             >
               <div
-                className={`max-w-[85%] p-3.5 rounded-2xl text-xs leading-relaxed ${
+                className={`max-w-[88%] p-3.5 rounded-2xl text-sm leading-relaxed ${
                   m.sender === 'user'
                     ? 'bg-cyan-600 text-white rounded-br-xs'
                     : 'bg-white border border-slate-200 text-slate-800 rounded-bl-xs shadow-2xs'
@@ -313,13 +336,13 @@ export const ScienceAssistantModal: React.FC<Props> = ({
         </div>
 
         {/* Quick Suggestion Chips */}
-        <div className="px-4 py-2 border-t border-slate-100 bg-white flex items-center gap-1.5 overflow-x-auto">
-          <span className="text-[10px] text-slate-400 font-semibold shrink-0">Hỏi nhanh:</span>
+        <div className="px-3 sm:px-4 py-2 border-t border-slate-100 bg-white flex flex-wrap items-center gap-1.5">
+          <span className="text-[11px] text-slate-500 font-semibold shrink-0">Hỏi nhanh:</span>
           {PRESET_QUESTIONS.map((pq) => (
             <button
               key={pq.label}
               onClick={() => handlePreset(pq)}
-              className="text-[11px] whitespace-nowrap bg-slate-100 hover:bg-cyan-50 hover:text-cyan-700 text-slate-600 px-2.5 py-1 rounded-full transition-colors border border-slate-200/60"
+              className="text-xs bg-slate-100 hover:bg-cyan-50 hover:text-cyan-700 text-slate-700 px-3 py-1.5 min-h-11 lg:min-h-9 rounded-full transition-colors border border-slate-200/60 text-left"
             >
               {pq.label}
             </button>
@@ -329,6 +352,7 @@ export const ScienceAssistantModal: React.FC<Props> = ({
         {/* Input Bar */}
         <div className="p-3 bg-white border-t border-slate-200 flex items-center gap-2">
           <input
+            ref={inputRef}
             type="text"
             value={inputText}
             aria-label="Câu hỏi cho Bạn Khoa Học"
@@ -337,12 +361,12 @@ export const ScienceAssistantModal: React.FC<Props> = ({
               if (e.key === 'Enter') handleSend(inputText);
             }}
             placeholder="Hỏi về không khí, nước, nam châm, ánh sáng, âm thanh, điện, cây..."
-            className="flex-1 px-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-cyan-500 focus:bg-white"
+            className="flex-1 min-w-0 px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-cyan-500 focus:bg-white"
           />
           <button
             onClick={() => handleSend(inputText)}
             aria-label="Gửi câu hỏi"
-            className="p-2.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl transition-colors shadow-2xs"
+            className="w-11 h-11 shrink-0 flex items-center justify-center bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl transition-colors shadow-2xs"
           >
             <Send className="w-4 h-4" />
           </button>

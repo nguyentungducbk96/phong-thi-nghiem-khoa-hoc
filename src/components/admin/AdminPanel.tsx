@@ -97,7 +97,7 @@ export const AdminPanel: React.FC = () => {
 
   const UserActions: React.FC<{ u: AuthProfile }> = ({ u }) => {
     if (u.id === auth.profile?.id) return <span className="text-xs text-slate-400">(tài khoản của thầy cô)</span>;
-    const b = 'min-h-[40px] px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1 disabled:opacity-50';
+    const b = 'min-h-11 lg:min-h-10 px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1 disabled:opacity-50';
     return (
       <div className="flex flex-wrap gap-1.5">
         {u.status === 'pending' && (
@@ -132,7 +132,7 @@ export const AdminPanel: React.FC = () => {
                   act(u.id + 'role', () => adminSetUser(u.id, { role }), 'Đã đổi vai trò.');
                 }
               }}
-              className="min-h-[40px] px-2 rounded-lg border border-slate-300 bg-white"
+              className="min-h-11 lg:min-h-10 px-2 rounded-lg border border-slate-300 bg-white"
             >
               <option value="teacher">Giáo viên</option>
               <option value="admin">Quản trị viên</option>
@@ -179,7 +179,7 @@ export const AdminPanel: React.FC = () => {
         <button
           disabled={!!busy}
           onClick={() => act(item.id, () => setContentHidden(kind, item.id, !item.hidden), item.hidden ? 'Đã hiện lại.' : 'Đã ẩn nội dung.')}
-          className="min-h-[40px] px-3 rounded-lg text-xs font-semibold border border-slate-300 bg-white hover:bg-slate-50 inline-flex items-center gap-1"
+          className="min-h-11 lg:min-h-10 px-3 rounded-lg text-xs font-semibold border border-slate-300 bg-white hover:bg-slate-50 inline-flex items-center gap-1"
         >
           {item.hidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />} {item.hidden ? 'Hiện' : 'Ẩn'}
         </button>
@@ -189,7 +189,7 @@ export const AdminPanel: React.FC = () => {
             if (!window.confirm(`Xóa "${item.title}"?`)) return;
             act(item.id, () => (kind === 'videos' ? deleteVideo(item as ScienceVideo) : deleteResource(item as LearningResource)), 'Đã xóa.');
           }}
-          className="min-h-[40px] px-3 rounded-lg text-xs font-semibold text-rose-600 hover:bg-rose-50 inline-flex items-center gap-1"
+          className="min-h-11 lg:min-h-10 px-3 rounded-lg text-xs font-semibold text-rose-600 hover:bg-rose-50 inline-flex items-center gap-1"
         >
           <Trash2 className="w-3.5 h-3.5" /> Xóa
         </button>
