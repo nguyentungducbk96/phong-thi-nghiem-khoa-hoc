@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { FilterSelect, LoadMore, usePaged, fieldCls } from '../ui/ListControls';
 import { LearningResource, ResourceFileType, TopicId } from '../../types';
 import { SCIENCE_TOPICS } from '../../data/scienceData';
 import { RESOURCE_ACCEPT, validateFile, formatBytes, signedUrl, ResourceInput } from '../../lib/api';
@@ -95,6 +96,7 @@ export const DocumentLibrary: React.FC<Props> = ({
   const [fileTypeFilter, setFileTypeFilter] = useState<string>('all');
   const [topicFilter, setTopicFilter] = useState<string>('all');
   const [onlyBookmarked, setOnlyBookmarked] = useState<boolean>(false);
+  const [sortBy, setSortBy] = useState<'newest' | 'name' | 'topic'>('newest');
   const [showForm, setShowForm] = useState<boolean>(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -121,6 +123,25 @@ export const DocumentLibrary: React.FC<Props> = ({
     const matchesBookmark = !onlyBookmarked || bookmarks.includes(res.id);
     return matchesSearch && matchesType && matchesTopic && matchesBookmark;
   });
+  // "Mới cập nhật": theo ngày sửa (hoặc ngày thêm) dd/mm/yyyy; cùng ngày giữ thứ tự máy chủ trả về (mới trước)
+  const viDateValue = (d?: string) => {
+    const m = d?.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    return m ? new Date(+m[3], +m[2] - 1, +m[1]).getTime() : 0;
+  };
+  const sortedResources = filteredResources
+    .map((r, i) => ({ r, i }))
+    .sort((a, b) => {
+      if (sortBy === 'name') return a.r.title.localeCompare(b.r.title, 'vi');
+      if (sortBy === 'topic')
+        return SCIENCE_TOPICS.findIndex((t) => t.id === a.r.topicId) - SCIENCE_TOPICS.findIndex((t) => t.id === b.r.topicId) || a.i - b.i;
+      return viDateValue(b.r.updatedAt || b.r.uploadedAt) - viDateValue(a.r.updatedAt || a.r.uploadedAt) || a.i - b.i;
+    })
+    .map((x) => x.r);
+  const { visible: pagedResources, remaining, more } = usePaged(
+    sortedResources,
+    8,
+    [searchTerm, fileTypeFilter, topicFilter, onlyBookmarked, sortBy].join('|')
+  );
 
   const openAdd = () => {
     setEditingId(null);
@@ -283,60 +304,63 @@ export const DocumentLibrary: React.FC<Props> = ({
       )}
       {error && <ErrorState text={error} onRetry={onRetry} />}
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative w-full sm:w-auto sm:min-w-[220px] flex-1 sm:max-w-xs">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+      {/* Tìm kiếm, lọc, sắp xếp */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-2xs">
+        <div className="relative">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
-            type="text"
+            type="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Tìm kiếm tài liệu..."
             aria-label="Tìm kiếm tài liệu"
-            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-2xs"
+            className={`${fieldCls} pl-10`}
           />
         </div>
-
-        <select
-          value={topicFilter}
-          onChange={(e) => setTopicFilter(e.target.value)}
-          aria-label="Lọc theo chủ đề"
-          className="py-2 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-500"
-        >
-          <option value="all">Tất cả chủ đề</option>
-          {SCIENCE_TOPICS.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={fileTypeFilter}
-          onChange={(e) => setFileTypeFilter(e.target.value)}
-          aria-label="Lọc theo loại tài liệu"
-          className="py-2 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-500"
-        >
-          <option value="all">Tất cả loại</option>
-          {FILE_TYPES.map((f) => (
-            <option key={f.value} value={f.value}>
-              {f.label}
-            </option>
-          ))}
-        </select>
-
-        <button
-          onClick={() => setOnlyBookmarked(!onlyBookmarked)}
-          aria-pressed={onlyBookmarked}
-          className={`px-3 py-2 text-xs font-semibold rounded-xl border flex items-center gap-1.5 transition-colors ${
-            onlyBookmarked
-              ? 'bg-amber-50 text-amber-800 border-amber-300'
-              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-          }`}
-        >
-          <Bookmark className={`w-3.5 h-3.5 ${onlyBookmarked ? 'fill-amber-500 text-amber-500' : ''}`} />
-          Cần xem lại
-        </button>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+          <FilterSelect
+            id="doc-topic"
+            label="Chủ đề"
+            value={topicFilter}
+            onChange={setTopicFilter}
+            options={[{ value: 'all', label: 'Tất cả chủ đề' }, ...SCIENCE_TOPICS.map((t) => ({ value: t.id, label: t.name }))]}
+          />
+          <FilterSelect
+            id="doc-type"
+            label="Loại tài liệu"
+            value={fileTypeFilter}
+            onChange={setFileTypeFilter}
+            options={[{ value: 'all', label: 'Tất cả loại' }, ...FILE_TYPES.map((f) => ({ value: f.value, label: f.label }))]}
+          />
+          <div className="col-span-2 sm:col-span-1">
+            <FilterSelect
+              id="doc-sort"
+              label="Sắp xếp"
+              value={sortBy}
+              onChange={(v) => setSortBy(v as typeof sortBy)}
+              options={[
+                { value: 'newest', label: 'Mới cập nhật' },
+                { value: 'name', label: 'Tên A → Z' },
+                { value: 'topic', label: 'Theo chủ đề' }
+              ]}
+            />
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
+          <button
+            onClick={() => setOnlyBookmarked(!onlyBookmarked)}
+            aria-pressed={onlyBookmarked}
+            className={`inline-flex items-center gap-1.5 px-3 min-h-11 text-sm font-semibold rounded-xl border transition-colors ${
+              onlyBookmarked ? 'bg-amber-50 text-amber-800 border-amber-300' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+            }`}
+          >
+            <Bookmark className={`w-4 h-4 ${onlyBookmarked ? 'fill-amber-500 text-amber-500' : ''}`} />
+            Cần xem lại ({bookmarks.filter((b) => visibleResources.some((r) => r.id === b)).length})
+          </button>
+          <span className="text-xs text-slate-500" aria-live="polite">
+            {filteredResources.length} tài liệu
+          </span>
+        </div>
       </div>
 
       {/* Resources Grid / Empty state */}
@@ -357,21 +381,22 @@ export const DocumentLibrary: React.FC<Props> = ({
           </p>
         </div>
       ) : (
+        <>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredResources.map((res) => {
+          {pagedResources.map((res) => {
             const isBookmarked = bookmarks.includes(res.id);
             return (
               <div
                 key={res.id}
-                className="bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-md transition-all flex flex-col justify-between space-y-4"
+                className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 hover:shadow-md transition-all flex flex-col justify-between space-y-4 min-w-0"
               >
                 <div>
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex flex-wrap items-center gap-2 min-w-0">
                       {getFileBadge(res.fileType)}
                       <span className="text-[11px] text-slate-400">{topicName(res.topicId)}</span>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex flex-wrap items-center justify-end gap-1.5">
                       {isTeacher &&
                         (res.audience === 'teacher_only' ? (
                           <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded flex items-center gap-1">
@@ -387,7 +412,7 @@ export const DocumentLibrary: React.FC<Props> = ({
                         aria-pressed={isBookmarked}
                         aria-label={isBookmarked ? 'Bỏ đánh dấu cần xem lại' : 'Đánh dấu cần xem lại'}
                         title={isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu cần xem lại'}
-                        className="p-1.5 rounded-lg hover:bg-amber-50"
+                        className="w-11 h-11 -m-1.5 flex items-center justify-center rounded-lg hover:bg-amber-50"
                       >
                         <Bookmark
                           className={`w-4 h-4 ${isBookmarked ? 'fill-amber-500 text-amber-500' : 'text-slate-400'}`}
@@ -396,11 +421,11 @@ export const DocumentLibrary: React.FC<Props> = ({
                     </div>
                   </div>
 
-                  <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">
+                  <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2 [overflow-wrap:anywhere]">
                     {res.title}
                   </h3>
                   {res.description && (
-                    <p className="text-xs text-slate-500 mt-1 line-clamp-3 leading-relaxed">
+                    <p className="text-xs text-slate-500 mt-1 line-clamp-3 leading-relaxed [overflow-wrap:anywhere]">
                       {res.description}
                     </p>
                   )}
@@ -478,6 +503,8 @@ export const DocumentLibrary: React.FC<Props> = ({
             );
           })}
         </div>
+        <LoadMore remaining={remaining} shown={pagedResources.length} total={sortedResources.length} onMore={more} noun="tài liệu" />
+        </>
       )}
 
       {/* Add / Edit Resource Modal for Teachers */}

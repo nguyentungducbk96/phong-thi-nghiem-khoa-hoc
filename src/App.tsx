@@ -71,7 +71,8 @@ const EMPTY_DATA: StudentData = {
   quizAttempts: [],
   experimentResults: [],
   resourceBookmarks: [],
-  favoriteVideoIds: []
+  favoriteVideoIds: [],
+  favoriteExperimentIds: []
 };
 
 export default function App() {
@@ -131,7 +132,7 @@ export default function App() {
     [toast, reloadData]
   );
 
-  const { completedExpIds, studentPoints, notebooks: notebookEntries, quizAttempts, experimentResults, resourceBookmarks, favoriteVideoIds } = data;
+  const { completedExpIds, studentPoints, notebooks: notebookEntries, quizAttempts, experimentResults, resourceBookmarks, favoriteVideoIds, favoriteExperimentIds } = data;
 
   const badges = computeBadges({
     completedExpIds,
@@ -283,6 +284,15 @@ export default function App() {
     persist(() => store.setFavoriteVideo(id, on));
   };
 
+  const handleToggleFavoriteExperiment = (id: string) => {
+    const on = !favoriteExperimentIds.includes(id);
+    setData((d) => ({
+      ...d,
+      favoriteExperimentIds: on ? [...d.favoriteExperimentIds, id] : d.favoriteExperimentIds.filter((b) => b !== id)
+    }));
+    persist(() => store.setFavoriteExperiment(id, on));
+  };
+
   const handleSelectTopicFromHome = (topicId: string) => {
     setFilterTopicId(topicId);
     setCurrentTab('experiments');
@@ -403,6 +413,8 @@ export default function App() {
           <ExperimentCatalog
             experiments={EXPERIMENTS_DATA}
             completedExpIds={completedExpIds}
+            favoriteIds={favoriteExperimentIds}
+            onToggleFavorite={handleToggleFavoriteExperiment}
             initialTopicId={filterTopicId}
             onSelectExperiment={handleSelectExperiment}
           />

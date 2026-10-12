@@ -80,15 +80,33 @@ export interface NotebookEntry {
   questionsExplored?: string;
 }
 
+export type QuizQuestionType =
+  | 'multiple_choice' // trắc nghiệm nhiều lựa chọn
+  | 'true_false' // đúng / sai
+  | 'matching' // nối hiện tượng với nguyên nhân
+  | 'ordering' // sắp xếp quy trình thí nghiệm
+  | 'classification' // phân loại vật liệu / hiện tượng vào nhóm
+  | 'prediction' // dự đoán kết quả
+  | 'application'; // câu hỏi vận dụng thực tế
+
 export interface QuizQuestion {
   id: string;
-  type: 'multiple_choice' | 'true_false' | 'matching' | 'ordering';
+  type: QuizQuestionType;
   question: string;
+  // Tình huống đi kèm (dự đoán / vận dụng)
+  scenario?: string;
+  // multiple_choice, prediction, application
   options?: string[];
   correctIndex?: number;
+  // true_false
   isTrue?: boolean;
+  // matching: left = hiện tượng, right = nguyên nhân (đúng theo cặp)
   pairs?: { left: string; right: string }[];
+  // ordering: các bước theo đúng thứ tự
   steps?: string[];
+  // classification: tên các nhóm và vật / hiện tượng cần xếp (bucket = chỉ số nhóm đúng)
+  buckets?: string[];
+  items?: { text: string; bucket: number }[];
   explanation: string;
 }
 

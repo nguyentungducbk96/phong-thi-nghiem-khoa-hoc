@@ -3,6 +3,7 @@
 import { supabase } from '../lib/supabase';
 import { EXPERIMENTS_DATA, INITIAL_QUIZZES } from '../data/scienceData';
 import type { StudentStore, StudentData } from './storage';
+import { loadFallbackExperimentFavorites, setFallbackExperimentFavorite } from './storage';
 import type { NotebookEntry, QuizAttempt, ExperimentResult } from '../types';
 import { XP_EXPERIMENT_COMPLETE } from './progress';
 
@@ -19,6 +20,10 @@ const must = <T,>(r: { data: T; error: { message: string } | null }): T => {
   if (r.error) throw new Error(r.error.message);
   return r.data;
 };
+
+// Bảng favorites chưa nhận item_type 'experiment' (migration 0006 chưa chạy)
+const isMissingExperimentFavoriteType = (e: unknown) =>
+  /favorites_item_type_check|check constraint|23514/i.test(e instanceof Error ? e.message : String(e));
 
 // ---- chuyển đổi dòng ↔ đối tượng giao diện ----
 interface NotebookRow {
@@ -154,7 +159,13 @@ export const createRemoteStore = (studentId: string): StudentStore => ({
       quizAttempts: attempts,
       experimentResults: (must(res) as ResultRow[]).map(rowToResult),
       resourceBookmarks: favorites.filter((f) => f.item_type === 'resource').map((f) => f.item_id),
-      favoriteVideoIds: favorites.filter((f) => f.item_type === 'video').map((f) => f.item_id)
+      favoriteVideoIds: favorites.filter((f) => f.item_type === 'video').map((f) => f.item_id),
+      favoriteExperimentIds: Array.from(
+        new Set([
+          ...favorites.filter((f) => f.item_type === 'experiment').map((f) => f.item_id),
+          ...loadFallbackExperimentFavorites(studentId)
+        ])
+      )
     };
   },
 
@@ -211,6 +222,21 @@ export const createRemoteStore = (studentId: string): StudentStore => ({
     else must(await c.from('favorites').delete().match({ user_id: studentId, item_type: 'video', item_id: id }));
   },
 
+  // Cần migration 0006 (cho phép item_type = 'experiment'). Chưa chạy migration thì
+  // lưu tạm trên máy này, không báo lỗi cho học sinh.
+  async setFavoriteExperiment(id, on) {
+    setFallbackExperimentFavorite(studentId, id, on);
+    const c = db();
+    try {
+      if (on) must(await c.from('favorites').upsert({ user_id: studentId, item_type: 'experiment', item_id: id }, { ignoreDuplicates: true }));
+      else must(await c.from('favorites').delete().match({ user_id: studentId, item_type: 'experiment', item_id: id }));
+      // Đã lưu được trên máy chủ: bỏ bản tạm
+      if (on) setFallbackExperimentFavorite(studentId, id, false);
+    } catch (e) {
+      if (!isMissingExperimentFavoriteType(e)) throw e;
+    }
+  },
+
   async syncBadges(ids) {
     if (!ids.length) return;
     await db()
@@ -252,4 +278,14 @@ export const importLocalToRemote = async (studentId: string, d: StudentData) => 
     ...d.resourceBookmarks.map((item_id) => ({ user_id: studentId, item_type: 'resource', item_id }))
   ].filter((f) => f.item_id.length <= 80);
   if (favs.length) must(await c.from('favorites').upsert(favs, opts));
+
+  const expFavs = d.favoriteExperimentIds.filter((id) => KNOWN_EXPERIMENTS.has(id));
+  if (expFavs.length) {
+    try {
+      must(await c.from('favorites').upsert(expFavs.map((item_id) => ({ user_id: studentId, item_type: 'experiment', item_id })), opts));
+    } catch (e) {
+      if (!isMissingExperimentFavoriteType(e)) throw e;
+      expFavs.forEach((id) => setFallbackExperimentFavorite(studentId, id, true));
+    }
+  }
 };

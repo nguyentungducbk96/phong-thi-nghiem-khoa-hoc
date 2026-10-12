@@ -636,10 +636,10 @@ export const EXPERIMENTS_DATA: Experiment[] = [
 export const INITIAL_QUIZZES: Quiz[] = [
   {
     id: 'quiz_khong_khi_nuoc',
-    title: 'Thử thách: Khám phá Không khí và Nước',
+    title: 'Thử thách: Không khí, Nước và Cây xanh',
     topicId: 'khong-khi-nuoc',
-    durationMinutes: 10,
-    description: 'Kiểm tra kiến thức về tính chất không khí, sự chiếm chỗ và vòng tuần hoàn nước.',
+    durationMinutes: 15,
+    description: 'Không khí chiếm chỗ, nước bay hơi và ngưng tụ, cây cần gì để sống — có câu nối, sắp xếp, phân loại, dự đoán và vận dụng.',
     questions: [
       {
         id: 'qz_1',
@@ -673,15 +673,117 @@ export const INITIAL_QUIZZES: Quiz[] = [
         ],
         correctIndex: 0,
         explanation: 'Không khí hít vào chiếm chỗ trong các phế nang phổi làm lồng ngực nở rộng ra.'
+      },
+      {
+        id: 'qz_7',
+        type: 'matching',
+        question: 'Nối mỗi hiện tượng với nguyên nhân đúng của nó.',
+        pairs: [
+          { left: 'Gương trong phòng tắm bị mờ sau khi tắm nước ấm', right: 'Hơi nước gặp mặt gương lạnh hơn nên ngưng tụ thành những giọt rất nhỏ' },
+          { left: 'Quần áo ướt phơi ngoài nắng nhanh khô', right: 'Nước trong quần áo bay hơi nhanh hơn khi trời nắng và có gió' },
+          { left: 'Úp ngược cốc rồi ấn xuống chậu nước, tờ giấy ở đáy cốc vẫn khô', right: 'Không khí trong cốc chiếm chỗ nên nước không tràn vào đầy cốc được' },
+          { left: 'Thổi vào quả bóng bay, quả bóng căng phồng lên', right: 'Không khí được thổi vào chiếm chỗ bên trong quả bóng' }
+        ],
+        explanation: 'Gương mờ là do ngưng tụ; quần áo khô là do bay hơi; cốc úp ngược và quả bóng bay đều cho thấy không khí chiếm chỗ.'
+      },
+      {
+        id: 'qz_8',
+        type: 'matching',
+        question: 'Mỗi chậu cây dưới đây đang thiếu điều gì? Hãy nối cho đúng.',
+        pairs: [
+          { left: 'Cây để trong phòng tối nhiều ngày, lá vàng úa dần', right: 'Thiếu ánh sáng' },
+          { left: 'Cây lâu ngày không được tưới, lá héo rũ xuống', right: 'Thiếu nước' },
+          { left: 'Cây bị trùm kín trong túi ni lông nhiều ngày, yếu dần', right: 'Thiếu không khí' },
+          { left: 'Cây đặt cạnh cửa sổ mọc nghiêng ra phía ngoài', right: 'Cây hướng về phía có ánh sáng' }
+        ],
+        explanation: 'Cây cần nước, ánh sáng, không khí (và chất khoáng, nhiệt độ thích hợp) để sống và phát triển. Thân cây còn mọc hướng về phía có ánh sáng.'
+      },
+      {
+        id: 'qz_9',
+        type: 'ordering',
+        question: 'Sắp xếp các bước làm thí nghiệm “Không khí có chiếm chỗ không?” theo đúng thứ tự.',
+        steps: [
+          'Nhét một tờ giấy khô thật chặt vào đáy cốc',
+          'Úp ngược cốc xuống, giữ cốc thật thẳng',
+          'Ấn cốc thẳng đứng xuống chậu nước',
+          'Nhấc cốc lên thẳng đứng, lấy tờ giấy ra kiểm tra'
+        ],
+        explanation: 'Phải nhét giấy trước, úp cốc thẳng rồi mới ấn xuống nước. Nhấc cốc lên thẳng đứng để không khí không thoát ra, nhờ đó tờ giấy vẫn khô.'
+      },
+      {
+        id: 'qz_10',
+        type: 'ordering',
+        question: 'Em muốn tìm hiểu “Cây có cần nước không?”. Hãy sắp xếp các bước thí nghiệm cho đúng.',
+        steps: [
+          'Chuẩn bị hai chậu cây giống nhau, trồng cùng một loại đất',
+          'Đặt cả hai chậu ở cùng một chỗ có ánh sáng',
+          'Hằng ngày chỉ tưới nước cho chậu A, không tưới chậu B',
+          'Sau một tuần, so sánh lá và thân của hai chậu cây'
+        ],
+        explanation: 'Hai chậu phải giống nhau và để cùng chỗ, chỉ khác nhau ở việc tưới nước. Như vậy em mới biết sự khác nhau là do nước.'
+      },
+      {
+        id: 'qz_11',
+        type: 'classification',
+        question: 'Mỗi hiện tượng sau là sự bay hơi hay sự ngưng tụ?',
+        buckets: ['Bay hơi', 'Ngưng tụ'],
+        items: [
+          { text: 'Vũng nước trên sân cạn dần khi trời nắng', bucket: 0 },
+          { text: 'Nắp nồi cơm có nhiều giọt nước đọng ở mặt trong', bucket: 1 },
+          { text: 'Mặt ngoài cốc nước đá có những giọt nước nhỏ', bucket: 1 },
+          { text: 'Phơi nước muối ngoài nắng, nước cạn chỉ còn lại muối', bucket: 0 },
+          { text: 'Sáng sớm có những giọt sương đọng trên lá cây', bucket: 1 }
+        ],
+        explanation: 'Nước từ thể lỏng thành hơi nước là bay hơi. Hơi nước gặp lạnh thành nước (giọt nước) là ngưng tụ.'
+      },
+      {
+        id: 'qz_12',
+        type: 'prediction',
+        question: 'Em dự đoán điều gì sẽ xảy ra?',
+        scenario: 'Em đổ lượng nước bằng nhau vào hai chiếc đĩa giống nhau. Một đĩa để ngoài nắng, một đĩa để trong bóng râm. Sau hai giờ, em quay lại xem.',
+        options: [
+          'Đĩa để ngoài nắng còn ít nước hơn.',
+          'Đĩa để trong bóng râm còn ít nước hơn.',
+          'Hai đĩa vẫn còn đầy nước như lúc đầu.',
+          'Đĩa ngoài nắng có nhiều nước hơn lúc đầu.'
+        ],
+        correctIndex: 0,
+        explanation: 'Nước bay hơi nhanh hơn khi nhiệt độ cao. Đĩa ngoài nắng nóng hơn nên nước bay hơi nhanh hơn và còn lại ít hơn.'
+      },
+      {
+        id: 'qz_13',
+        type: 'application',
+        question: 'Vì sao khi phơi quần áo, mẹ thường giũ phẳng, phơi trải rộng ở chỗ có nắng và thoáng gió?',
+        options: [
+          'Để nước trong quần áo bay hơi nhanh hơn, quần áo mau khô.',
+          'Để quần áo nặng hơn và không bị gió thổi bay.',
+          'Để nước ngưng tụ lại trên quần áo.',
+          'Để quần áo hút thêm hơi nước trong không khí.'
+        ],
+        correctIndex: 0,
+        explanation: 'Trải rộng giúp nước tiếp xúc nhiều với không khí; nắng làm nước nóng hơn và gió mang hơi nước đi. Vì vậy nước bay hơi nhanh hơn.'
+      },
+      {
+        id: 'qz_14',
+        type: 'application',
+        question: 'Bạn Lan đặt chậu cây trong góc phòng thiếu sáng và tưới nước đều mỗi ngày nhưng lá cây vẫn vàng dần. Lan nên làm gì?',
+        options: [
+          'Tưới thật nhiều nước hơn nữa.',
+          'Chuyển chậu cây ra chỗ có ánh sáng, ví dụ gần cửa sổ.',
+          'Trùm túi ni lông kín quanh cây cho ấm.',
+          'Cắt hết lá vàng và để cây ở chỗ cũ.'
+        ],
+        correctIndex: 1,
+        explanation: 'Cây đã đủ nước nhưng thiếu ánh sáng. Cây cần ánh sáng để sống và xanh tốt, nên cần đặt cây ở nơi có ánh sáng.'
       }
     ]
   },
   {
     id: 'quiz_nang_luong_am_thanh',
-    title: 'Thử thách: Ánh sáng, Âm thanh và Điện',
+    title: 'Thử thách: Ánh sáng, Âm thanh, Điện và Nam châm',
     topicId: 'anh-sang-am-thanh',
-    durationMinutes: 10,
-    description: 'Thử tài hiểu biết về đường truyền ánh sáng, bóng tối và dao động âm thanh.',
+    durationMinutes: 15,
+    description: 'Ánh sáng và bóng tối, âm thanh, mạch điện đơn giản và nam châm — có câu nối, sắp xếp, phân loại, dự đoán và vận dụng.',
     questions: [
       {
         id: 'qz_4',
@@ -715,6 +817,114 @@ export const INITIAL_QUIZZES: Quiz[] = [
         ],
         correctIndex: 1,
         explanation: 'Phần phía sau vật cản sáng không nhận được ánh sáng chiếu tới tạo nên vùng bóng tối.'
+      },
+      {
+        id: 'qz_15',
+        type: 'matching',
+        question: 'Nối mỗi hiện tượng với nguyên nhân đúng của nó.',
+        pairs: [
+          { left: 'Phía sau tấm bìa được chiếu đèn có vùng bóng tối', right: 'Ánh sáng truyền theo đường thẳng và bị tấm bìa cản lại' },
+          { left: 'Em nhìn thấy quyển sách trên bàn', right: 'Có ánh sáng từ quyển sách truyền tới mắt em' },
+          { left: 'Hạt gạo trên mặt trống nảy lên khi gõ trống', right: 'Mặt trống rung động khi phát ra âm thanh' },
+          { left: 'Áp tai xuống bàn, nghe rõ tiếng gõ nhẹ ở đầu bàn bên kia', right: 'Âm thanh truyền được qua vật rắn như mặt bàn' }
+        ],
+        explanation: 'Bóng tối có vì ánh sáng truyền thẳng bị vật cản lại. Ta nhìn thấy vật khi có ánh sáng từ vật truyền tới mắt. Âm thanh do vật rung động phát ra và truyền được qua chất rắn, chất lỏng, chất khí.'
+      },
+      {
+        id: 'qz_16',
+        type: 'ordering',
+        question: 'Sắp xếp các bước lắp một mạch điện thắp sáng bóng đèn theo đúng thứ tự.',
+        steps: [
+          'Chuẩn bị pin, bóng đèn, dây dẫn và công tắc đang mở',
+          'Nối dây từ cực dương (+) của pin tới một đầu của bóng đèn',
+          'Nối đầu còn lại của bóng đèn qua công tắc rồi về cực âm (−) của pin',
+          'Đóng công tắc và quan sát bóng đèn'
+        ],
+        explanation: 'Lắp mạch khi công tắc đang mở cho an toàn, nối thành một vòng kín từ cực (+) qua bóng đèn, công tắc về cực (−), sau cùng mới đóng công tắc.'
+      },
+      {
+        id: 'qz_17',
+        type: 'classification',
+        question: 'Xếp mỗi vật vào đúng nhóm: vật nào bị nam châm hút, vật nào không?',
+        buckets: ['Bị nam châm hút', 'Không bị nam châm hút'],
+        items: [
+          { text: 'Đinh sắt', bucket: 0 },
+          { text: 'Kẹp giấy bằng sắt', bucket: 0 },
+          { text: 'Lon nước bằng nhôm', bucket: 1 },
+          { text: 'Thước kẻ bằng nhựa', bucket: 1 },
+          { text: 'Ốc vít bằng sắt', bucket: 0 },
+          { text: 'Đoạn dây đồng', bucket: 1 }
+        ],
+        explanation: 'Nam châm hút các vật làm bằng sắt hoặc có chứa sắt. Nhôm, đồng, nhựa, gỗ, giấy không bị nam châm hút.'
+      },
+      {
+        id: 'qz_18',
+        type: 'classification',
+        question: 'Vật nào cho dòng điện chạy qua (dẫn điện), vật nào không cho dòng điện chạy qua (cách điện)?',
+        buckets: ['Dẫn điện', 'Cách điện'],
+        items: [
+          { text: 'Dây đồng', bucket: 0 },
+          { text: 'Đinh sắt', bucket: 0 },
+          { text: 'Giấy bạc (giấy nhôm)', bucket: 0 },
+          { text: 'Thước nhựa', bucket: 1 },
+          { text: 'Cục tẩy cao su', bucket: 1 },
+          { text: 'Que gỗ khô', bucket: 1 }
+        ],
+        explanation: 'Kim loại như đồng, sắt, nhôm dẫn điện. Nhựa, cao su, gỗ khô không dẫn điện nên được dùng làm vỏ bọc dây điện, tay cầm dụng cụ.'
+      },
+      {
+        id: 'qz_19',
+        type: 'prediction',
+        question: 'Em dự đoán bóng đèn sẽ thế nào?',
+        scenario: 'Mạch điện gồm pin, dây dẫn, công tắc đã đóng và bóng đèn đang sáng. Em tháo một đầu dây ra khỏi cực của pin.',
+        options: [
+          'Bóng đèn sáng hơn.',
+          'Bóng đèn tắt vì mạch điện bị hở.',
+          'Bóng đèn vẫn sáng như cũ.',
+          'Bóng đèn nhấp nháy mãi không dừng.'
+        ],
+        correctIndex: 1,
+        explanation: 'Dòng điện chỉ chạy khi mạch điện kín. Tháo một đầu dây làm mạch bị hở nên bóng đèn tắt.'
+      },
+      {
+        id: 'qz_20',
+        type: 'prediction',
+        question: 'Bóng của tấm bìa trên màn sẽ thay đổi thế nào?',
+        scenario: 'Tấm bìa và màn chắn đứng yên. Em đưa đèn pin từ từ lại gần tấm bìa hơn.',
+        options: [
+          'Bóng nhỏ đi.',
+          'Bóng to ra.',
+          'Bóng biến mất hoàn toàn.',
+          'Bóng giữ nguyên kích thước.'
+        ],
+        correctIndex: 1,
+        explanation: 'Khi nguồn sáng lại gần vật cản sáng, vật che khuất nhiều ánh sáng hơn nên bóng trên màn to ra.'
+      },
+      {
+        id: 'qz_21',
+        type: 'application',
+        question: 'Đèn bàn ở nhà bị hỏng bóng. Trước khi thay bóng đèn, việc đầu tiên cần làm là gì?',
+        options: [
+          'Dùng tay ướt vặn bóng đèn ra thật nhanh.',
+          'Rút phích cắm điện ra khỏi ổ cắm và nhờ người lớn giúp.',
+          'Bật công tắc để xem đèn còn sáng không.',
+          'Dùng tua vít bằng sắt chọc vào ổ cắm.'
+        ],
+        correctIndex: 1,
+        explanation: 'Phải ngắt điện (rút phích cắm) trước khi sửa chữa đồ điện để không bị điện giật. Học sinh nên nhờ người lớn giúp.'
+      },
+      {
+        id: 'qz_22',
+        type: 'application',
+        question: 'Hộp đinh sắt bị đổ, đinh rơi lẫn vào đống cát. Cách nào giúp lấy đinh ra nhanh và an toàn nhất?',
+        options: [
+          'Dùng tay bới cát nhặt từng chiếc.',
+          'Đổ nước vào đống cát cho đinh nổi lên.',
+          'Bọc nam châm trong túi ni lông rồi rê trên mặt cát để hút đinh.',
+          'Dùng thước nhựa gạt cát sang một bên.'
+        ],
+        correctIndex: 2,
+        explanation: 'Nam châm hút sắt nhưng không hút cát. Bọc nam châm trong túi ni lông để đinh dễ gỡ ra, tay không bị đinh đâm.'
       }
     ]
   }

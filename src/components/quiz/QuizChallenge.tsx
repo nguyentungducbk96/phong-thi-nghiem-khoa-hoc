@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Quiz, QuizQuestion, QuizAttempt } from '../../types';
+import { gradeQuestion, isChoiceType, QuizAnswer, QUESTION_TYPE_LABEL, seededShuffle } from '../../utils/quiz';
+import { MatchingQuestion, OrderingQuestion, ClassificationQuestion } from './InteractiveQuestions';
 import { soundManager } from '../../utils/audio';
 import { newId } from '../../utils/storage';
 import {
@@ -19,12 +21,25 @@ interface Props {
   initialQuizId?: string;
 }
 
+// Bản nháp ban đầu cho câu cần thao tác
+const initialDraft = (q: QuizQuestion | undefined, attemptNo: number): number[] => {
+  if (!q) return [];
+  if (q.type === 'ordering') return seededShuffle(q.steps?.length || 0, `${q.id}:${attemptNo}:o`);
+  if (q.type === 'matching') return Array(q.pairs?.length || 0).fill(-1);
+  if (q.type === 'classification') return Array(q.items?.length || 0).fill(-1);
+  return [];
+};
+
 export const QuizChallenge: React.FC<Props> = ({ quizzes, attempts, onQuizComplete, initialQuizId }) => {
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz>(
     () => quizzes.find((q) => q.id === initialQuizId) || quizzes[0]
   );
   const [currentQIndex, setCurrentQIndex] = useState<number>(0);
-  const [userAnswers, setUserAnswers] = useState<Record<string, number | boolean>>({});
+  const [userAnswers, setUserAnswers] = useState<Record<string, QuizAnswer>>({});
+  // Lần làm thứ mấy (để xáo trộn lại thẻ khi làm lại)
+  const [attemptNo, setAttemptNo] = useState<number>(0);
+  // Bản nháp cho câu nối / sắp xếp / phân loại trước khi bấm "Kiểm tra"
+  const [draft, setDraft] = useState<number[]>(() => initialDraft(selectedQuiz.questions[0], 0));
   const [isAnsweredCurrent, setIsAnsweredCurrent] = useState<boolean>(false);
   const [isFinished, setIsFinished] = useState<boolean>(false);
   const [correctCount, setCorrectCount] = useState<number>(0);
@@ -33,10 +48,12 @@ export const QuizChallenge: React.FC<Props> = ({ quizzes, attempts, onQuizComple
   const currentQ: QuizQuestion = selectedQuiz.questions[currentQIndex];
   const quizHistory = attempts.filter((a) => a.quizId === selectedQuiz.id);
 
-  const isAnswerCorrect = (q: QuizQuestion, ans: number | boolean | undefined) =>
-    q.type === 'multiple_choice' ? ans === q.correctIndex : ans === q.isTrue;
+  const isAnswerCorrect = gradeQuestion;
+  const seed = `${selectedQuiz.id}:${currentQ?.id}:${attemptNo}`;
+  const isInteractive = currentQ && (currentQ.type === 'matching' || currentQ.type === 'ordering' || currentQ.type === 'classification');
+  const draftComplete = !isInteractive || draft.every((v) => v >= 0);
 
-  const handleSelectAnswer = (ans: number | boolean) => {
+  const handleSelectAnswer = (ans: QuizAnswer) => {
     if (isAnsweredCurrent) return;
 
     setUserAnswers({ ...userAnswers, [currentQ.id]: ans });
@@ -50,7 +67,9 @@ export const QuizChallenge: React.FC<Props> = ({ quizzes, attempts, onQuizComple
 
   const handleNext = () => {
     if (currentQIndex < selectedQuiz.questions.length - 1) {
+      const nextQ = selectedQuiz.questions[currentQIndex + 1];
       setCurrentQIndex(currentQIndex + 1);
+      setDraft(initialDraft(nextQ, attemptNo));
       setIsAnsweredCurrent(false);
       return;
     }
@@ -89,7 +108,10 @@ export const QuizChallenge: React.FC<Props> = ({ quizzes, attempts, onQuizComple
     }
   };
 
-  const handleRetake = () => {
+  const handleRetake = (quiz: Quiz = selectedQuiz) => {
+    const n = attemptNo + 1;
+    setAttemptNo(n);
+    setDraft(initialDraft(quiz.questions[0], n));
     setCurrentQIndex(0);
     setUserAnswers({});
     setIsAnsweredCurrent(false);
@@ -104,145 +126,185 @@ export const QuizChallenge: React.FC<Props> = ({ quizzes, attempts, onQuizComple
     ? quizHistory.filter((a) => a.id !== lastAttempt.id).reduce((m, a) => Math.max(m, a.correct), 0)
     : 0;
 
+  const total = selectedQuiz.questions.length;
+  const choiceOptions = currentQ && isChoiceType(currentQ.type) ? currentQ.options || [] : [];
+
   return (
     <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 space-y-6">
-      {/* Top Banner */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-xs">
+      {/* Đầu trang */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 space-y-4 shadow-xs">
         <div>
           <div className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+            <span className="w-8 h-8 shrink-0 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
               <Award className="w-5 h-5" />
             </span>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
-              Thử Thách Nhà Khoa Học Nhí
-            </h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Thử Thách Nhà Khoa Học Nhí</h1>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Trắc nghiệm vui khám phá kiến thức - Tích lũy điểm thưởng, không trừ điểm khi trả lời sai!
+            Nhiều dạng câu hỏi: trắc nghiệm, đúng/sai, nối, sắp xếp, phân loại, dự đoán và vận dụng. Không trừ điểm khi trả lời sai — đọc giải thích rồi thử lại nhé!
           </p>
         </div>
 
-        {/* Quiz Selector */}
-        <div className="flex flex-wrap gap-2">
-          {quizzes.map((q) => (
-            <button
-              key={q.id}
-              onClick={() => {
-                setSelectedQuiz(q);
-                handleRetake();
-              }}
-              className={`px-3 py-2 text-xs font-semibold rounded-xl border transition-colors ${
-                selectedQuiz.id === q.id
-                  ? 'bg-amber-500 text-white border-amber-600 shadow-2xs'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              {q.title}
-            </button>
-          ))}
+        {/* Chọn thử thách */}
+        <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Chọn thử thách">
+          {quizzes.map((q) => {
+            const best = attempts.filter((a) => a.quizId === q.id).reduce((m, a) => Math.max(m, a.total ? a.correct / a.total : 0), 0);
+            const sel = selectedQuiz.id === q.id;
+            return (
+              <button
+                key={q.id}
+                role="radio"
+                aria-checked={sel}
+                onClick={() => {
+                  if (sel) return;
+                  setSelectedQuiz(q);
+                  handleRetake(q);
+                }}
+                className={`text-left p-3 rounded-xl border-2 transition-colors ${
+                  sel ? 'border-amber-500 bg-amber-50' : 'border-slate-200 bg-white hover:border-amber-300'
+                }`}
+              >
+                <span className="block text-sm font-bold text-slate-900">{q.title}</span>
+                <span className="block text-xs text-slate-500 mt-0.5">
+                  {q.questions.length} câu · khoảng {q.durationMinutes} phút
+                  {best > 0 ? ` · tốt nhất ${Math.round(best * 100)}%` : ''}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Main Challenge Card */}
       {!isFinished ? (
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xs">
-          {/* Progress & Score Bar */}
-          <div className="flex items-center justify-between text-xs pb-4 border-b border-slate-100">
-            <span className="font-semibold text-slate-500">
-              Câu hỏi <strong className="text-cyan-700">{currentQIndex + 1}</strong> / {selectedQuiz.questions.length}
-            </span>
-            <div className="flex items-center gap-1.5 font-bold text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
-              <Sparkles className="w-3.5 h-3.5" /> Đúng {correctCount} câu
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-8 space-y-5 shadow-xs">
+          {/* Tiến độ */}
+          <div className="space-y-2 pb-4 border-b border-slate-100">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <span className="font-semibold text-slate-500">
+                Câu <strong className="text-cyan-700">{currentQIndex + 1}</strong> / {total}
+              </span>
+              <span className="flex items-center gap-1.5 font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+                <Sparkles className="w-3.5 h-3.5" /> Đúng {correctCount} câu
+              </span>
+            </div>
+            <div className="h-2 rounded-full bg-slate-100 overflow-hidden" aria-hidden="true">
+              <div className="h-full bg-cyan-500 transition-all" style={{ width: `${((currentQIndex + (isAnsweredCurrent ? 1 : 0)) / total) * 100}%` }} />
             </div>
           </div>
 
-          {/* Question Text */}
-          <div>
-            <h2 className="text-lg sm:text-xl font-bold text-slate-900 leading-snug">
-              {currentQ.question}
-            </h2>
+          {/* Câu hỏi */}
+          <div className="space-y-2">
+            <span className="inline-block text-[11px] font-bold uppercase tracking-wide text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
+              {QUESTION_TYPE_LABEL[currentQ.type]}
+            </span>
+            {currentQ.scenario && (
+              <p className="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-sm text-amber-950 leading-relaxed">{currentQ.scenario}</p>
+            )}
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 leading-snug">{currentQ.question}</h2>
           </div>
 
-          {/* Answer Options */}
+          {/* Trả lời */}
           <div className="space-y-3">
-            {currentQ.type === 'multiple_choice' &&
-              currentQ.options?.map((opt, idx) => {
-                const isSelected = userAnswers[currentQ.id] === idx;
-                const isCorrect = idx === currentQ.correctIndex;
-
-                return (
-                  <button
-                    key={idx}
-                    disabled={isAnsweredCurrent}
-                    onClick={() => handleSelectAnswer(idx)}
-                    className={`w-full text-left p-4 rounded-xl border-2 text-xs sm:text-sm font-medium transition-all flex items-center justify-between ${
-                      isAnsweredCurrent
-                        ? isCorrect
-                          ? 'border-emerald-500 bg-emerald-50/70 text-emerald-950 font-bold'
-                          : isSelected
+            {choiceOptions.map((opt, idx) => {
+              const isSelected = userAnswers[currentQ.id] === idx;
+              const isCorrect = idx === currentQ.correctIndex;
+              return (
+                <button
+                  key={idx}
+                  disabled={isAnsweredCurrent}
+                  onClick={() => handleSelectAnswer(idx)}
+                  className={`w-full text-left p-3 sm:p-4 rounded-xl border-2 text-sm font-medium transition-all flex items-center justify-between gap-3 ${
+                    isAnsweredCurrent
+                      ? isCorrect
+                        ? 'border-emerald-500 bg-emerald-50/70 text-emerald-950 font-bold'
+                        : isSelected
                           ? 'border-rose-400 bg-rose-50/70 text-rose-950'
                           : 'border-slate-200 text-slate-400 opacity-60'
-                        : 'border-slate-200 hover:border-cyan-400 bg-white hover:bg-cyan-50/30 text-slate-800'
-                    }`}
-                  >
-                    <span>{opt}</span>
-                    {isAnsweredCurrent && isCorrect && (
-                      <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
-                    )}
-                    {isAnsweredCurrent && isSelected && !isCorrect && (
-                      <XCircle className="w-5 h-5 text-rose-500 shrink-0" />
-                    )}
-                  </button>
-                );
-              })}
+                      : 'border-slate-200 hover:border-cyan-400 bg-white hover:bg-cyan-50/30 text-slate-800'
+                  }`}
+                >
+                  <span className="min-w-0">{opt}</span>
+                  {isAnsweredCurrent && isCorrect && <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />}
+                  {isAnsweredCurrent && isSelected && !isCorrect && <XCircle className="w-5 h-5 text-rose-500 shrink-0" />}
+                </button>
+              );
+            })}
 
             {currentQ.type === 'true_false' && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 {[true, false].map((boolVal) => {
                   const isSelected = userAnswers[currentQ.id] === boolVal;
                   const isCorrect = boolVal === currentQ.isTrue;
-
                   return (
                     <button
                       key={String(boolVal)}
                       disabled={isAnsweredCurrent}
                       onClick={() => handleSelectAnswer(boolVal)}
-                      className={`py-4 px-6 rounded-xl border-2 text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+                      className={`py-4 px-3 rounded-xl border-2 text-sm font-bold transition-all flex items-center justify-center gap-2 ${
                         isAnsweredCurrent
                           ? isCorrect
                             ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
                             : isSelected
-                            ? 'border-rose-400 bg-rose-50 text-rose-800'
-                            : 'border-slate-200 opacity-40'
+                              ? 'border-rose-400 bg-rose-50 text-rose-800'
+                              : 'border-slate-200 opacity-40'
                           : 'border-slate-200 hover:border-cyan-400 bg-white text-slate-800'
                       }`}
                     >
-                      {boolVal ? 'ĐÚNG (Chính xác)' : 'SAI (Chưa đúng)'}
+                      {boolVal ? 'ĐÚNG' : 'SAI'}
                     </button>
                   );
                 })}
               </div>
             )}
+
+            {currentQ.type === 'matching' && (
+              <MatchingQuestion key={seed} q={currentQ} seed={seed} value={draft} onChange={setDraft} checked={isAnsweredCurrent} />
+            )}
+            {currentQ.type === 'ordering' && (
+              <OrderingQuestion key={seed} q={currentQ} seed={seed} value={draft} onChange={setDraft} checked={isAnsweredCurrent} />
+            )}
+            {currentQ.type === 'classification' && (
+              <ClassificationQuestion key={seed} q={currentQ} seed={seed} value={draft} onChange={setDraft} checked={isAnsweredCurrent} />
+            )}
           </div>
 
-          {/* Explanation Callout */}
+          {/* Nút kiểm tra cho câu cần thao tác */}
+          {isInteractive && !isAnsweredCurrent && (
+            <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
+              {!draftComplete && <span className="text-xs text-slate-500">Em hãy hoàn thành tất cả các thẻ rồi bấm Kiểm tra.</span>}
+              <button
+                onClick={() => handleSelectAnswer([...draft])}
+                disabled={!draftComplete}
+                className="flex items-center gap-2 px-5 min-h-11 rounded-xl font-bold text-sm bg-amber-500 text-white hover:bg-amber-600 disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors"
+              >
+                <CheckCircle className="w-4 h-4" /> Kiểm tra
+              </button>
+            </div>
+          )}
+
+          {/* Giải thích */}
           {isAnsweredCurrent && (
-            <div className="p-4 rounded-xl bg-sky-50 border border-sky-200 text-xs text-sky-950 space-y-1">
-              <span className="font-bold flex items-center gap-1.5 text-cyan-800">
-                <HelpCircle className="w-4 h-4" /> Giải thích khoa học:
+            <div
+              className={`p-4 rounded-xl border text-sm space-y-1 ${
+                isAnswerCorrect(currentQ, userAnswers[currentQ.id]) ? 'bg-emerald-50 border-emerald-200 text-emerald-950' : 'bg-sky-50 border-sky-200 text-sky-950'
+              }`}
+              role="status"
+            >
+              <span className="font-bold flex items-center gap-1.5">
+                <HelpCircle className="w-4 h-4" />
+                {isAnswerCorrect(currentQ, userAnswers[currentQ.id]) ? 'Chính xác! Giải thích khoa học:' : 'Chưa đúng, không sao cả! Cùng xem giải thích:'}
               </span>
               <p className="leading-relaxed">{currentQ.explanation}</p>
             </div>
           )}
 
-          {/* Next Button */}
           {isAnsweredCurrent && (
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-end pt-1">
               <button
                 onClick={handleNext}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs bg-cyan-600 text-white hover:bg-cyan-700 transition-colors shadow-xs"
+                className="flex items-center gap-2 px-6 min-h-11 rounded-xl font-bold text-sm bg-cyan-600 text-white hover:bg-cyan-700 transition-colors shadow-xs"
               >
-                {currentQIndex < selectedQuiz.questions.length - 1 ? 'Câu tiếp theo' : 'Xem kết quả'}
+                {currentQIndex < total - 1 ? 'Câu tiếp theo' : 'Xem kết quả'}
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -250,7 +312,7 @@ export const QuizChallenge: React.FC<Props> = ({ quizzes, attempts, onQuizComple
         </div>
       ) : (
         /* Finished Card */
-        <div className="bg-white border border-slate-200 rounded-2xl p-8 sm:p-12 text-center space-y-6 shadow-xs">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-12 text-center space-y-6 shadow-xs">
           <div className="w-20 h-20 mx-auto rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
             <Award className="w-10 h-10" />
           </div>
@@ -264,7 +326,7 @@ export const QuizChallenge: React.FC<Props> = ({ quizzes, attempts, onQuizComple
           </div>
 
           {lastAttempt && (
-            <div className="inline-flex flex-wrap items-center justify-center gap-4 bg-amber-50 border border-amber-200 px-6 py-3 rounded-2xl">
+            <div className="inline-flex flex-wrap items-center justify-center gap-4 bg-amber-50 border border-amber-200 px-4 sm:px-6 py-3 rounded-2xl">
               <div>
                 <span className="text-xs text-amber-700 block font-medium">Kết quả</span>
                 <span className="text-2xl font-black text-amber-900 font-mono">
@@ -303,8 +365,8 @@ export const QuizChallenge: React.FC<Props> = ({ quizzes, attempts, onQuizComple
 
           <div className="pt-4 flex justify-center gap-3">
             <button
-              onClick={handleRetake}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
+              onClick={() => handleRetake()}
+              className="flex items-center gap-2 px-5 min-h-11 rounded-xl text-sm font-bold bg-cyan-600 text-white hover:bg-cyan-700 transition-colors shadow-2xs"
             >
               <RotateCcw className="w-4 h-4" /> Thử sức lại
             </button>
@@ -313,14 +375,14 @@ export const QuizChallenge: React.FC<Props> = ({ quizzes, attempts, onQuizComple
       )}
 
       {/* Lịch sử làm bài */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-3 shadow-xs">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 space-y-3 shadow-xs">
         <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
           <History className="w-4 h-4 text-cyan-600" /> Lịch sử làm bài: {selectedQuiz.title}
         </h3>
         {quizHistory.length === 0 ? (
           <p className="text-xs text-slate-400">Chưa có lần làm bài nào.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div>
             <table className="w-full text-left text-xs">
               <thead className="text-slate-500 border-b border-slate-100">
                 <tr>

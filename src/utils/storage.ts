@@ -34,6 +34,9 @@ export const STORAGE_KEYS = {
   quizAttempts: 'quiz_attempts',
   experimentResults: 'experiment_results',
   videoFavorites: 'video_favorites',
+  experimentFavorites: 'experiment_favorites',
+  // Học sinh đã đăng nhập nhưng máy chủ chưa chạy migration 0006: lưu tạm trên máy, theo từng tài khoản
+  experimentFavoritesFallback: 'experiment_favorites_fallback',
   importHandled: 'import_handled'
 } as const;
 
@@ -204,6 +207,7 @@ export interface StudentData {
   experimentResults: ExperimentResult[];
   resourceBookmarks: string[];
   favoriteVideoIds: string[];
+  favoriteExperimentIds: string[];
 }
 
 export interface StudentStore {
@@ -218,6 +222,7 @@ export interface StudentStore {
   deleteNotebook(id: string): Promise<void>;
   setBookmark(resourceId: string, on: boolean): Promise<void>;
   setFavoriteVideo(videoId: string, on: boolean): Promise<void>;
+  setFavoriteExperiment(experimentId: string, on: boolean): Promise<void>;
   syncBadges(badgeIds: string[]): Promise<void>;
 }
 
@@ -237,8 +242,19 @@ export const loadLocalSnapshot = (): StudentData => ({
   quizAttempts: loadData<QuizAttempt[]>(STORAGE_KEYS.quizAttempts, []),
   experimentResults: loadData<ExperimentResult[]>(STORAGE_KEYS.experimentResults, []),
   resourceBookmarks: loadData<string[]>(STORAGE_KEYS.resourceBookmarks, []),
-  favoriteVideoIds: loadVideoFavorites()
+  favoriteVideoIds: loadVideoFavorites(),
+  favoriteExperimentIds: loadData<string[]>(STORAGE_KEYS.experimentFavorites, [])
 });
+
+// Yêu thích thí nghiệm lưu tạm trên máy cho tài khoản học sinh (khi bảng favorites trên máy chủ chưa nhận loại 'experiment')
+export const loadFallbackExperimentFavorites = (userId: string): string[] =>
+  loadData<Record<string, string[]>>(STORAGE_KEYS.experimentFavoritesFallback, {})[userId] || [];
+export const setFallbackExperimentFavorite = (userId: string, id: string, on: boolean) => {
+  const all = loadData<Record<string, string[]>>(STORAGE_KEYS.experimentFavoritesFallback, {});
+  const list = all[userId] || [];
+  all[userId] = on ? (list.includes(id) ? list : [...list, id]) : list.filter((x) => x !== id);
+  saveData(STORAGE_KEYS.experimentFavoritesFallback, all);
+};
 
 export const hasLocalLearningData = (d: StudentData = loadLocalSnapshot()) =>
   d.completedExpIds.length + d.notebooks.length + d.quizAttempts.length + d.experimentResults.length > 0;
@@ -300,6 +316,9 @@ export const localStore: StudentStore = {
   async setFavoriteVideo(id, on) {
     saveData(STORAGE_KEYS.videoFavorites, loadVideoFavorites());
     toggleInList(STORAGE_KEYS.videoFavorites, id, on);
+  },
+  async setFavoriteExperiment(id, on) {
+    toggleInList(STORAGE_KEYS.experimentFavorites, id, on);
   },
   async syncBadges() {
     // Ngoại tuyến: huy hiệu được tính lại từ dữ liệu mỗi lần, không cần lưu riêng

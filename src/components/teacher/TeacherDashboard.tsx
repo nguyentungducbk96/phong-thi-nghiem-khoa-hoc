@@ -219,13 +219,16 @@ export const TeacherDashboard: React.FC<Props> = ({ experiments, quizzes, onSele
       const qa = learning.attempts.filter((a) => a.quizId === quiz.id);
       if (!qa.length) return;
       quiz.questions.forEach((q) => {
-        const wrongAtt = qa.filter((a) => a.wrongQuestionIds.includes(q.id));
+        // Chỉ tính các lần làm có câu này (thử thách có thể được bổ sung câu mới sau)
+        const seenAtt = qa.filter((a) => a.wrongQuestionIds.includes(q.id) || (a.answers && q.id in a.answers));
+        if (!seenAtt.length) return;
+        const wrongAtt = seenAtt.filter((a) => a.wrongQuestionIds.includes(q.id));
         out.push({
           key: `${quiz.id}:${q.id}`,
           source: quiz.title,
           question: q.question,
           wrong: wrongAtt.length,
-          seen: qa.length,
+          seen: seenAtt.length,
           students: new Set(wrongAtt.map((a) => a.studentId)).size
         });
       });

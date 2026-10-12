@@ -6,6 +6,7 @@ import { VIDEO_ACCEPT, validateFile, formatBytes, signedUrl, VideoInput } from '
 import { friendlyError } from '../../lib/supabase';
 import { LoadingState, ErrorState, Spinner } from '../ui/States';
 import { useToast } from '../ui/Toast';
+import { FilterSelect, LoadMore, usePaged, fieldCls } from '../ui/ListControls';
 
 interface Props {
   videos: ScienceVideo[];
@@ -112,13 +113,24 @@ export const VideoLibrary: React.FC<Props> = ({
   const [newDuration, setNewDuration] = useState<string>('');
   const [formError, setFormError] = useState<string>('');
   const [onlyFavorites, setOnlyFavorites] = useState<boolean>(false);
+  const [sortBy, setSortBy] = useState<'newest' | 'name' | 'topic'>('newest');
 
   const filteredVideos = videos.filter((v) => {
-    const matchesSearch = v.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const term = searchTerm.trim().toLowerCase();
+    const matchesSearch = !term || v.title.toLowerCase().includes(term) || v.description.toLowerCase().includes(term);
     const matchesTopic = selectedTopic === 'all' || v.topicId === selectedTopic;
     const matchesFav = !onlyFavorites || isFav(v);
     return matchesSearch && matchesTopic && matchesFav;
   });
+  // Danh sách gốc: video thầy cô thêm (mới nhất trước) rồi tới video có sẵn → "Mới cập nhật" giữ thứ tự gốc
+  const topicIdx = (id: string) => SCIENCE_TOPICS.findIndex((t) => t.id === id);
+  const sortedVideos =
+    sortBy === 'newest'
+      ? filteredVideos
+      : [...filteredVideos].sort((a, b) =>
+          sortBy === 'name' ? a.title.localeCompare(b.title, 'vi') : topicIdx(a.topicId) - topicIdx(b.topicId) || a.title.localeCompare(b.title, 'vi')
+        );
+  const { visible: pagedVideos, remaining, more } = usePaged(sortedVideos, 9, [searchTerm, selectedTopic, onlyFavorites, sortBy].join('|'));
 
   // Esc đóng trình phát / hộp thoại thêm video
   useEffect(() => {
@@ -237,7 +249,7 @@ export const VideoLibrary: React.FC<Props> = ({
   return (
     <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6 space-y-6">
       {/* Top Banner */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-xs">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 flex flex-wrap items-center justify-between gap-4 shadow-xs">
         <div>
           <div className="flex items-center gap-2">
             <span className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold">
@@ -272,56 +284,52 @@ export const VideoLibrary: React.FC<Props> = ({
       {error && <ErrorState text={error} onRetry={onRetry} />}
       {loading && <LoadingState text="Đang tải video..." />}
 
-      {/* Filter & Search Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* Search */}
-        <div className="relative w-full sm:w-auto sm:min-w-[240px] flex-1 sm:max-w-xs">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+      {/* Tìm kiếm, lọc, sắp xếp */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-2xs">
+        <div className="relative">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
-            type="text"
+            type="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Tìm kiếm video..."
-            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-rose-500 shadow-2xs"
+            aria-label="Tìm kiếm video"
+            className={`${fieldCls} pl-10`}
           />
         </div>
-
-        {/* Topic tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 max-w-full">
-          <button
-            onClick={() => setSelectedTopic('all')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border whitespace-nowrap transition-colors ${
-              selectedTopic === 'all'
-                ? 'bg-rose-600 text-white border-rose-700'
-                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            Tất cả chủ đề
-          </button>
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
+          <FilterSelect
+            id="vid-topic"
+            label="Chủ đề"
+            value={selectedTopic}
+            onChange={(v) => setSelectedTopic(v as TopicId | 'all')}
+            options={[{ value: 'all', label: 'Tất cả chủ đề' }, ...SCIENCE_TOPICS.map((t) => ({ value: t.id, label: t.name }))]}
+          />
+          <FilterSelect
+            id="vid-sort"
+            label="Sắp xếp"
+            value={sortBy}
+            onChange={(v) => setSortBy(v as typeof sortBy)}
+            options={[
+              { value: 'newest', label: 'Mới cập nhật' },
+              { value: 'name', label: 'Tên A → Z' },
+              { value: 'topic', label: 'Theo chủ đề' }
+            ]}
+          />
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
           <button
             onClick={() => setOnlyFavorites(!onlyFavorites)}
             aria-pressed={onlyFavorites}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border whitespace-nowrap transition-colors flex items-center gap-1 ${
-              onlyFavorites
-                ? 'bg-rose-50 text-rose-700 border-rose-300'
-                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+            className={`inline-flex items-center gap-1.5 px-3 min-h-11 text-sm font-semibold rounded-xl border transition-colors ${
+              onlyFavorites ? 'bg-rose-50 text-rose-700 border-rose-300' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
             }`}
           >
-            <Heart className={`w-3.5 h-3.5 ${onlyFavorites ? 'fill-rose-500 text-rose-500' : ''}`} /> Yêu thích
+            <Heart className={`w-4 h-4 ${onlyFavorites ? 'fill-rose-500 text-rose-500' : ''}`} /> Yêu thích
           </button>
-          {SCIENCE_TOPICS.map((topic) => (
-            <button
-              key={topic.id}
-              onClick={() => setSelectedTopic(topic.id)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border whitespace-nowrap transition-colors ${
-                selectedTopic === topic.id
-                  ? 'bg-rose-600 text-white border-rose-700'
-                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              {topic.name}
-            </button>
-          ))}
+          <span className="text-xs text-slate-500" aria-live="polite">
+            {filteredVideos.length} video
+          </span>
         </div>
       </div>
 
@@ -329,13 +337,15 @@ export const VideoLibrary: React.FC<Props> = ({
         <div className="p-10 text-center bg-white rounded-2xl border border-slate-200 text-sm text-slate-500">
           {videos.length === 0
             ? 'Chưa có video nào. Thầy cô có thể thêm đường dẫn video bài giảng.'
-            : 'Không có video nào phù hợp với bộ lọc.'}
+            : onlyFavorites && favoriteIds.length === 0
+              ? 'Em chưa đánh dấu video yêu thích nào. Bấm hình trái tim trên video để lưu lại.'
+              : 'Không có video nào phù hợp với bộ lọc. Em thử đổi từ khóa hoặc chủ đề nhé.'}
         </div>
       )}
 
       {/* Video Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredVideos.map((vid) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        {pagedVideos.map((vid) => (
           <div
             key={vid.id}
             className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-md transition-all flex flex-col justify-between group"
@@ -376,7 +386,7 @@ export const VideoLibrary: React.FC<Props> = ({
                   }}
                   aria-label={isFav(vid) ? 'Bỏ yêu thích' : 'Đánh dấu yêu thích'}
                   aria-pressed={isFav(vid)}
-                  className="absolute top-2 right-2 z-10 p-2 rounded-full bg-slate-900/60 text-white hover:text-rose-400 transition-colors"
+                  className="absolute top-2 right-2 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-slate-900/60 text-white hover:text-rose-400 transition-colors"
                 >
                   <Heart className={`w-4 h-4 ${isFav(vid) ? 'fill-rose-500 text-rose-500' : ''}`} />
                 </button>
@@ -427,6 +437,8 @@ export const VideoLibrary: React.FC<Props> = ({
           </div>
         ))}
       </div>
+
+      <LoadMore remaining={remaining} shown={pagedVideos.length} total={sortedVideos.length} onMore={more} noun="video" />
 
       {/* Video Watch & Reflection Modal */}
       {activeVideo && (
