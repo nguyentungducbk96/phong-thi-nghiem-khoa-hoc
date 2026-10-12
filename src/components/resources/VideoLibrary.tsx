@@ -10,6 +10,16 @@ interface Props {
   onToggleFavorite: (id: string) => void;
 }
 
+// Chuyển link YouTube (watch, youtu.be, shorts, embed) hoặc link .mp4 thành địa chỉ phát được
+const toEmbedUrl = (url?: string): string | null => {
+  if (!url || !url.trim()) return null;
+  const u = url.trim();
+  const m = u.match(/(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  if (m) return `https://www.youtube-nocookie.com/embed/${m[1]}?rel=0`;
+  if (/^https?:\/\//.test(u)) return u;
+  return null;
+};
+
 export const VideoLibrary: React.FC<Props> = ({
   videos,
   isTeacher,
@@ -214,18 +224,27 @@ export const VideoLibrary: React.FC<Props> = ({
 
             {/* Video Player Box */}
             <div className="relative aspect-video rounded-xl bg-black overflow-hidden flex items-center justify-center">
-              <img
-                src={activeVideo.thumbnailUrl}
-                alt={activeVideo.title}
-                className="w-full h-full object-cover opacity-80"
-              />
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-950/40 text-white p-4 text-center">
-                <Play className="w-12 h-12 text-rose-500 fill-current mb-2" />
-                <span className="text-sm font-semibold">{activeVideo.title}</span>
-                <span className="text-xs text-slate-300">
-                  (Video minh họa học tập trực quan môn Khoa học lớp 4)
-                </span>
-              </div>
+              {toEmbedUrl(activeVideo.videoUrl) ? (
+                <iframe
+                  src={toEmbedUrl(activeVideo.videoUrl)!}
+                  title={activeVideo.title}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <>
+                  <img
+                    src={activeVideo.thumbnailUrl}
+                    alt={activeVideo.title}
+                    className="w-full h-full object-cover opacity-60"
+                  />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-950/50 text-white p-4 text-center">
+                    <span className="text-sm font-semibold">Chưa có video cho bài này</span>
+                    <span className="text-xs text-slate-300">Giáo viên vui lòng bổ sung đường dẫn video.</span>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Pre & Post Questions */}

@@ -884,7 +884,7 @@ export const INITIAL_VIDEOS: ScienceVideo[] = [
     level: 'Lớp 4',
     preQuestion: 'Em hãy quan sát xem người dẫn chương trình làm thế nào để mẩu giấy luôn khô ráo?',
     postQuestion: 'Tại sao khi nghiêng chiếc cốc lại có tiếng lục bục và bong bóng nổi lên?',
-    videoUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
+    videoUrl: '',
     viewCount: 1420,
     isFavorite: true
   },
@@ -898,7 +898,7 @@ export const INITIAL_VIDEOS: ScienceVideo[] = [
     level: 'Lớp 4',
     preQuestion: 'Nước mưa trên trời rơi xuống có nguồn gốc từ đâu bay lên?',
     postQuestion: 'Hai quá trình vật lý nào diễn ra luân phiên trong chu trình của nước?',
-    videoUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
+    videoUrl: '',
     viewCount: 2310,
     isFavorite: false
   },
@@ -912,7 +912,7 @@ export const INITIAL_VIDEOS: ScienceVideo[] = [
     level: 'Lớp 4',
     preQuestion: 'Hai cực cùng tên của nam châm để gần nhau sẽ hút hay đẩy nhau?',
     postQuestion: 'Các vật bằng nhôm và đồng có bị nam châm hút không?',
-    videoUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
+    videoUrl: '',
     viewCount: 1890,
     isFavorite: true
   }
