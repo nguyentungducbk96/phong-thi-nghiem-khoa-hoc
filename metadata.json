@@ -1,0 +1,6 @@
+{
+  "name": "Phòng Thí Nghiệm Khoa Học Thông Minh",
+  "description": "Smart Science Lab - Ứng dụng thí nghiệm ảo tương tác môn Khoa học lớp 4: Khơi nguồn tò mò – Khám phá khoa học – Sáng tạo tương lai.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
